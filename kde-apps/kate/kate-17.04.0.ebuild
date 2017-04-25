@@ -11,7 +11,7 @@ inherit kde5
 DESCRIPTION="Kate is an advanced text editor"
 HOMEPAGE="https://www.kde.org/applications/utilities/kate http://kate-editor.org"
 KEYWORDS="~amd64 ~x86"
-IUSE="+addons"
+IUSE="+addons -allow-gui-root"
 
 DEPEND="
 	$(add_frameworks_dep kactivities)
@@ -54,6 +54,10 @@ DEPEND="
 RDEPEND="${DEPEND}"
 
 src_prepare() {
+	if use allow-gui-root ; then
+		eapply "${FILESDIR}"/${P}-allow-root.patch
+	fi
+
 	kde5_src_prepare
 	# test hangs
 	sed -e "/session_manager_test/d" -i kate/autotests/CMakeLists.txt || die

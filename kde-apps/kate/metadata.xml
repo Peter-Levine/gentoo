@@ -7,5 +7,6 @@
 	</maintainer>
 	<use>
 		<flag name="addons">Build and install additional plugins</flag>
+		<flag name="allow-gui-root">Allows the GUI program to be run as root user</flag>
 	</use>
 </pkgmetadata>
