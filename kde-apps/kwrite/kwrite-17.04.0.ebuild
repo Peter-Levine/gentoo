@@ -10,6 +10,7 @@ inherit kde5
 DESCRIPTION="KDE simple text editor"
 HOMEPAGE="https://www.kde.org/applications/utilities/kwrite"
 KEYWORDS="~amd64 ~x86"
+IUSE="-allow-gui-root"
 
 DEPEND="
 	$(add_frameworks_dep kactivities)
@@ -31,6 +32,10 @@ DEPEND="
 RDEPEND="${DEPEND}"
 
 src_prepare() {
+	if use allow-gui-root ; then
+		eapply "${FILESDIR}"/${P}-allow-root.patch
+	fi
+
 	kde5_src_prepare
 	# delete colliding kate translations
 	if [[ ${KDE_BUILD_TYPE} = release ]]; then

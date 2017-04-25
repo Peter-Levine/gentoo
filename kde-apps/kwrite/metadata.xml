@@ -5,4 +5,7 @@
 		<email>kde@gentoo.org</email>
 		<name>Gentoo KDE Project</name>
 	</maintainer>
+	<use>
+		<flag name="allow-gui-root">Allows the GUI program to be run as root user</flag>
+	</use>
 </pkgmetadata>
