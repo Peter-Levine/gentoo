@@ -3,6 +3,7 @@
 <pkgmetadata>
 	<use>
 		<flag name="thumbnail">Enables video thumbnail generation</flag>
+		<flag name="allow-gui-root">Allows the GUI program to be run as root user</flag>
 	</use>
 	<maintainer type="project">
 		<email>kde@gentoo.org</email>

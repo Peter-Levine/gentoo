@@ -12,7 +12,7 @@ inherit kde5
 DESCRIPTION="Plasma filemanager focusing on usability"
 HOMEPAGE="https://dolphin.kde.org https://www.kde.org/applications/system/dolphin"
 KEYWORDS="~amd64 ~x86"
-IUSE="semantic-desktop thumbnail"
+IUSE="semantic-desktop thumbnail -allow-gui-root"
 
 DEPEND="
 	$(add_frameworks_dep kbookmarks)
@@ -62,6 +62,14 @@ RDEPEND="${DEPEND}
 "
 
 RESTRICT+=" test"
+
+src_prepare() {
+	if use allow-gui-root ; then
+		eapply "${FILESDIR}"/${P}-allow-root.patch
+	fi
+
+	kde5_src_prepare
+}
 
 src_configure() {
 	local mycmakeargs=(
