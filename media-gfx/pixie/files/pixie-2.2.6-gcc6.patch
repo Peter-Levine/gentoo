@@ -1,0 +1,1930 @@
+Bug: https://bugs.gentoo.org/594354
+Upstream Issue: https://sourceforge.net/p/pixie/patches/23
+
+diff -Naur a/src/common/containers.h b/src/common/containers.h
+--- a/src/common/containers.h	2017-10-10 01:11:35.368613614 -0400
++++ b/src/common/containers.h	2017-10-10 01:12:38.002864948 -0400
+@@ -689,7 +689,7 @@
+ 							while(stack->availableSize < size) {
+ 
+ 								if (stack->next == NULL) {
+-									CMemPage	*cPage				=	memoryNewPage(max(pageSize,size));
++									CMemPage	*cPage				=	memoryNewPage(px_max(pageSize,size));
+ 									cPage->prev						=	stack;
+ 									stack->next						=	cPage;
+ 								}
+diff -Naur a/src/common/global.h b/src/common/global.h
+--- a/src/common/global.h	2017-10-10 01:11:35.368613614 -0400
++++ b/src/common/global.h	2017-10-10 01:13:12.648003789 -0400
+@@ -99,8 +99,8 @@
+ #undef degrees
+ #endif
+ 
+-#define			min(a,b)					((a) < (b) ? (a) : (b))
+-#define			max(a,b)					((a) > (b) ? (a) : (b))
++#define			px_min(a,b)					((a) < (b) ? (a) : (b))
++#define			px_max(a,b)					((a) > (b) ? (a) : (b))
+ #define			radians(a)					((a)*C_PI/180.)
+ #define			degrees(a)					((a)*180./ C_PI)
+ 
+diff -Naur a/src/common/mathSpec.h b/src/common/mathSpec.h
+--- a/src/common/mathSpec.h	2017-10-10 01:11:35.368613614 -0400
++++ b/src/common/mathSpec.h	2017-10-10 01:13:12.648003789 -0400
+@@ -545,13 +545,13 @@
+ 	const SCALAR_TYPE	e		=	1 / eta;
+ 	const SCALAR_TYPE	c		=	-dotvv(I,N);
+ 	const SCALAR_TYPE	t		=	e*e+c*c-1;
+-	const SCALAR_TYPE	g		=	SQRT(max(t,0));
++	const SCALAR_TYPE	g		=	SQRT(px_max(t,0));
+ 	const SCALAR_TYPE	a		=	(g - c) / (g + c);
+ 	const SCALAR_TYPE	b		=	(c*(g+c) - 1) / (c*(g-c) + 1);
+ 
+ 	Kr			=	0.5f*a*a*(1 + b*b);
+-	Kr			=	min(Kr,1);
+-	Kr			=	max(Kr,0);
++	Kr			=	px_min(Kr,1);
++	Kr			=	px_max(Kr,0);
+ 	Kt			=	1 - Kr;
+ 	reflect(R,I,N);
+ 	refract(T,I,N,eta);
+diff -Naur a/src/gui/interface.h b/src/gui/interface.h
+--- a/src/gui/interface.h	2017-10-10 01:11:35.367613610 -0400
++++ b/src/gui/interface.h	2017-10-10 01:12:37.999864936 -0400
+@@ -78,8 +78,8 @@
+ 							mulvf(mid,(float) 0.5);
+ 							
+ 							subvv(tmp,bmax,bmin);
+-							maxDim	=	max(tmp[0],tmp[1]);
+-							maxDim	=	max(tmp[2],maxDim);
++							maxDim	=	px_max(tmp[0],tmp[1]);
++							maxDim	=	px_max(tmp[2],maxDim);
+ 							maxDim	*=	5;
+ 						}
+ 
+diff -Naur a/src/ri/brickmap.cpp b/src/ri/brickmap.cpp
+--- a/src/ri/brickmap.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/brickmap.cpp	2017-10-10 01:13:12.594003572 -0400
+@@ -78,8 +78,8 @@
+ 	tmax1	=	P[0] + dP;
+ 	tmin2	=	x - d;
+ 	tmax2	=	x + d;
+-	tmin	=	max(tmin1,tmin2);
+-	tmax	=	min(tmax1,tmax2);
++	tmin	=	px_max(tmin1,tmin2);
++	tmax	=	px_min(tmax1,tmax2);
+ 	if (tmax <= tmin)	return 0;
+ 	w		=	tmax - tmin;
+ 
+@@ -88,8 +88,8 @@
+ 	tmax1	=	P[1] + dP;
+ 	tmin2	=	y - d;
+ 	tmax2	=	y + d;
+-	tmin	=	max(tmin1,tmin2);
+-	tmax	=	min(tmax1,tmax2);
++	tmin	=	px_max(tmin1,tmin2);
++	tmax	=	px_min(tmax1,tmax2);
+ 	if (tmax <= tmin)	return 0;
+ 	w		*=	tmax - tmin;
+ 
+@@ -98,8 +98,8 @@
+ 	tmax1	=	P[2] + dP;
+ 	tmin2	=	z - d;
+ 	tmax2	=	z + d;
+-	tmin	=	max(tmin1,tmin2);
+-	tmax	=	min(tmax1,tmax2);
++	tmin	=	px_max(tmin1,tmin2);
++	tmax	=	px_min(tmax1,tmax2);
+ 	if (tmax <= tmin)	return 0;
+ 	w		*=	tmax - tmin;
+ 
+@@ -199,8 +199,8 @@
+ 	movvv(bmax,bma);
+ 	subvv(bmax,bmin);
+ 	side			=	bmax[0];
+-	side			=	max(side,bmax[1]);
+-	side			=	max(side,bmax[2]);
++	side			=	px_max(side,bmax[1]);
++	side			=	px_max(side,bmax[2]);
+ 	invSide			=	1 / side;
+ 	addvf(bmax,bmin,side);
+ 	addvv(center,bmin,bmax);
+@@ -365,7 +365,7 @@
+ 	CBrickNode	*cNode;
+ 	vector		P,N;
+ 
+-	depth = min(max(depth,0),maxDepth);
++	depth = px_min(px_max(depth,0),maxDepth);
+ 
+ 	// First, transform the point to world coordinate system
+ 	mulmp(P,to,cP);
+@@ -1033,7 +1033,7 @@
+ 	float		*cC				=	C;
+ 	float		*cN				=	N;
+ 	float		*cR				=	R;
+-	int			level			=	min(max(0,detailLevel),maxDepth);
++	int			level			=	px_min(px_max(0,detailLevel),maxDepth);
+ 	int			nb				=	1 << level;
+ 	const float sqrt2			=	sqrtf(0.5f);
+ 	float		cubePoints[]	=	{	0, 0, 0,
+diff -Naur a/src/ri/bsplinePatchgrid.cpp b/src/ri/bsplinePatchgrid.cpp
+--- a/src/ri/bsplinePatchgrid.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/bsplinePatchgrid.cpp	2017-10-10 01:13:12.621003681 -0400
+@@ -205,8 +205,8 @@
+ 			interpolate				=	vertexData;
+ 
+ 			for (int i=0;i<numVertices;++i) {
+-				const	int		x			=	(int) floor(min(u[i]*upatches,(uVertices-4)));
+-				const	int		y			=	(int) floor(min(v[i]*vpatches,(vVertices-4)));
++				const	int		x			=	(int) floor(px_min(u[i]*upatches,(uVertices-4)));
++				const	int		y			=	(int) floor(px_min(v[i]*vpatches,(vVertices-4)));
+ 				const 	float	*vertex0	=	vertex + (y*upatches + x)*vertexSize*16;
+ 				const 	float	*vertex1	=	vertex0 + vertexSize*16*upatches*vpatches;
+ 				const	float	ctime		=	*time++;
+@@ -230,8 +230,8 @@
+ 		// Interpolate the vertices
+ 		for (int i=0;i<numVertices;++i) {
+ 			double			tmp1[4],tmp2[4];
+-			const	int		x			=	(int) floor(min(u[i]*upatches,(uVertices-4)));
+-			const	int		y			=	(int) floor(min(v[i]*vpatches,(vVertices-4)));
++			const	int		x			=	(int) floor(px_min(u[i]*upatches,(uVertices-4)));
++			const	int		y			=	(int) floor(px_min(v[i]*vpatches,(vVertices-4)));
+ 			const	double	cu			=	(u[i]*upatches - x);
+ 			const	double	cv			=	(v[i]*vpatches - y);
+ 			const	float	*data		=	vertexData + (y*upatches + x)*vertexSampleStride;
+@@ -289,8 +289,8 @@
+ 			// Interpolate the thing
+ 			for (int i=0;i<numVertices;++i) {
+ 				double			tmpStart[4],tmpEnd[4];
+-				const	int		x			=	(int) floor(min(u[i]*upatches,(uVertices-4)));
+-				const	int		y			=	(int) floor(min(v[i]*vpatches,(vVertices-4)));
++				const	int		x			=	(int) floor(px_min(u[i]*upatches,(uVertices-4)));
++				const	int		y			=	(int) floor(px_min(v[i]*vpatches,(vVertices-4)));
+ 				const	double	cu			=	(u[i]*upatches - x);
+ 				const	double	cv			=	(v[i]*vpatches - y);
+ 				const	float	*data		=	vertex + (y*upatches + x)*vertexSize*16;
+diff -Naur a/src/ri/curves.cpp b/src/ri/curves.cpp
+--- a/src/ri/curves.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/curves.cpp	2017-10-10 01:13:12.589003552 -0400
+@@ -272,7 +272,7 @@
+ 		estimateDicing(P,1,2,udiv,vdiv,attributes->shadingRate,attributes->flags & ATTRIBUTES_FLAGS_NONRASTERORIENT_DICE);
+ 
+ 		// Make sure we don't split along u
+-		if (vdiv == 1)	udiv	=	min(udiv,(CRenderer::maxGridSize >> 1) - 1);
++		if (vdiv == 1)	udiv	=	px_min(udiv,(CRenderer::maxGridSize >> 1) - 1);
+ 
+ 		// Can we render this sucker ?
+ 		if ((udiv+1)*(vdiv+1) > CRenderer::maxGridSize) {
+@@ -758,14 +758,14 @@
+ 			sizeVariable		=	cVar;
+ 
+ 			for (j=0;j<np;j++) {
+-				maxSize			=	max(maxSize,vertex[j]);
++				maxSize			=	px_max(maxSize,vertex[j]);
+ 			}
+ 
+ 			if (pl->data1 != NULL) {
+ 				vertex	=	pl->data1 + pl->parameters[i].index;
+ 
+ 				for (j=0;j<np;j++) {
+-					maxSize			=	max(maxSize,vertex[j]);
++					maxSize			=	px_max(maxSize,vertex[j]);
+ 				}
+ 			}
+ 
+diff -Naur a/src/ri/depository.cpp b/src/ri/depository.cpp
+--- a/src/ri/depository.cpp	2017-10-10 01:11:35.371613626 -0400
++++ b/src/ri/depository.cpp	2017-10-10 01:12:37.945864719 -0400
+@@ -91,7 +91,7 @@
+ 	for (int i=1;i<=numFound;i++) {
+ 		const		CDepositorySample	*p	=	indices[i];
+ 		const float	t1						=	distances[i] / (distances[0] + C_EPSILON);
+-		const float	t2						=	sqrtf(max(1 - dotvv(N,p->N),0));
++		const float	t2						=	sqrtf(px_max(1 - dotvv(N,p->N),0));
+ 		float		weight					=	1 / (t1 + 10*t2 + C_EPSILON);
+ 
+ 		if (weight < C_EPSILON) weight = C_EPSILON;
+diff -Naur a/src/ri/executeMisc.cpp b/src/ri/executeMisc.cpp
+--- a/src/ri/executeMisc.cpp	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/executeMisc.cpp	2017-10-10 01:13:12.615003657 -0400
+@@ -873,7 +873,7 @@
+ 	for (int i=numRays;i>0;--i,++rays) {
+ 		const int			numSamples		=	rays->numSamples;
+ 		const float			coneAngle		=	rays->coneAngle;
+-		const float			tanConeAngle	=	min(fabsf(tanf(coneAngle)),1.0f);
++		const float			tanConeAngle	=	px_min(fabsf(tanf(coneAngle)),1.0f);
+ 		const float			multiplier		=	1 / (float) numSamples;
+ 
+ 		// Compute the ray differentials
+@@ -898,7 +898,7 @@
+ 			if (dotvv(cRay->dir,cRay->dir) > C_EPSILON) {
+ 
+ 				movvv(cRay->from,from);
+-				cRay->t				=	min(rays->maxDist,d) - rays->bias;
++				cRay->t				=	px_min(rays->maxDist,d) - rays->bias;
+ 				cRay->tmin			=	rays->bias;
+ 				if (sampleMotion)	cRay->time	=	(urand() + currentSample - 1) * multiplier;
+ 				else				cRay->time	=	rays->time;
+@@ -993,7 +993,7 @@
+ 	for (int i=numRays;i>0;--i,++rays) {
+ 		const int			numSamples		=	rays->numSamples;
+ 		const float			coneAngle		=	rays->coneAngle;
+-		const float			tanConeAngle	=	min(fabsf(tanf(coneAngle)),1.0f);
++		const float			tanConeAngle	=	px_min(fabsf(tanf(coneAngle)),1.0f);
+ 		const float			multiplier		=	1 / (float) numSamples;
+ 		
+ 		// Compute the ray differentials
+@@ -1167,8 +1167,8 @@
+ 			for (j=0;j<vVertices;j++) {
+ 				for (i=0;i<uVertices;i++) {
+ 					
+-					const int	ii		=	min(i,uVertices-2);
+-					const int	jj		=	min(j,vVertices-2);
++					const int	ii		=	px_min(i,uVertices-2);
++					const int	jj		=	px_min(j,vVertices-2);
+ 
+ 					// The 4 corners of the current quad
+ 					const float	*cFrom0	=	from + jj*uVertices*3 + ii*3;
+@@ -1210,8 +1210,8 @@
+ 					ab[0]				*=	0.25f;
+ 					ab[1]				*=	0.25f;
+ 
+-					ab[0]				=	tanf(min(ab[0],((float) C_PI)*0.5f - C_EPSILON));
+-					ab[0]				=	min(ab[0],DEFAULT_RAY_DA);
++					ab[0]				=	tanf(px_min(ab[0],((float) C_PI)*0.5f - C_EPSILON));
++					ab[0]				=	px_min(ab[0],DEFAULT_RAY_DA);
+ 					
+ 					// guard against bad differentials
+ 				
+@@ -1263,8 +1263,8 @@
+ 				
+ 				ab[0]				*=	0.5f;
+ 				ab[1]				*=	0.5f;
+-				ab[0]				=	tanf(min(ab[0],((float) C_PI)*0.5f - C_EPSILON));
+-				ab[0]				=	min(ab[0],DEFAULT_RAY_DA);
++				ab[0]				=	tanf(px_min(ab[0],((float) C_PI)*0.5f - C_EPSILON));
++				ab[0]				=	px_min(ab[0],DEFAULT_RAY_DA);
+ 				
+ 				// guard against bad differentials
+ 				
+@@ -1339,8 +1339,8 @@
+ 			for (j=0;j<vVertices;j++) {
+ 				for (i=0;i<uVertices;i++) {
+ 					
+-					const int	ii		=	min(i,uVertices-2);
+-					const int	jj		=	min(j,vVertices-2);
++					const int	ii		=	px_min(i,uVertices-2);
++					const int	jj		=	px_min(j,vVertices-2);
+ 
+ 					// The 4 corners of the current quad
+ 					const float	*cFrom0	=	from + jj*uVertices*3 + ii*3;
+diff -Naur a/src/ri/giFunctions.h b/src/ri/giFunctions.h
+--- a/src/ri/giFunctions.h	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/giFunctions.h	2017-10-10 01:13:12.592003564 -0400
+@@ -422,7 +422,7 @@
+ #define GATHERHEADEREXPR		plReady();																			\
+ 								mulvf(dPdu,*du);																	\
+ 								mulvf(dPdv,*dv);																	\
+-								rays->da			=	min(max(tanf(*sampleCone),0.0f),1.0f);						\
++								rays->da			=	px_min(px_max(tanf(*sampleCone),0.0f),1.0f);						\
+ 								rays->db			=	(lengthv(dPdu) + lengthv(dPdv))*0.5f;						\
+ 								rays->sampleCone	=	*sampleCone;												\
+ 								rays->sampleBase	=	scratch->traceParams.sampleBase;							\
+diff -Naur a/src/ri/hcshader.cpp b/src/ri/hcshader.cpp
+--- a/src/ri/hcshader.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/hcshader.cpp	2017-10-10 01:13:12.644003773 -0400
+@@ -176,7 +176,7 @@
+ 					const float	sina		=	radius / len;
+ 					const float	cosa		=	sqrtf(1 - sina*sina);
+ 					const float	da			=	sina / (cosa + C_EPSILON);
+-					ray.da					=	min(DEFAULT_RAY_DA,da);
++					ray.da					=	px_min(DEFAULT_RAY_DA,da);
+ 					ray.db					=	DEFAULT_RAY_DB;
+ 
+ 					context->trace(&ray);
+@@ -502,7 +502,7 @@
+ 						const float	sina		=	r / len;
+ 						const float	cosa		=	sqrtf(1 - sina*sina);
+ 						const float	da			=	sina / (cosa + C_EPSILON);
+-						ray.da					=	min(DEFAULT_RAY_DA,da);
++						ray.da					=	px_min(DEFAULT_RAY_DA,da);
+ 						ray.db					=	DEFAULT_RAY_DB;
+ 
+ 						context->trace(&ray);
+diff -Naur a/src/ri/init.cpp b/src/ri/init.cpp
+--- a/src/ri/init.cpp	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/init.cpp	2017-10-10 01:13:12.630003717 -0400
+@@ -163,9 +163,9 @@
+ 			tin[1]	=	0;
+ 			tin[2]	=	0;
+ 		} else {
+-			tin[0]	=	max(in[0]*in[2]/in[1],0);
++			tin[0]	=	px_max(in[0]*in[2]/in[1],0);
+ 			tin[1]	=	in[2];
+-			tin[2]	=	max((1-in[0]-in[1])*in[2]/in[1],0);
++			tin[2]	=	px_max((1-in[0]-in[1])*in[2]/in[1],0);
+ 		}
+ 
+ 		out[COMP_R]		=	(float)  (3.24079*tin[0]		-	1.537150*tin[1]	-	0.498535*tin[2]);
+@@ -192,8 +192,8 @@
+ 		break;
+ 	case COLOR_HSL:
+ 		{
+-			float	mi	=	min(in[0],min(in[1],in[2]));
+-			float	ma	=	max(in[0],max(in[1],in[2]));
++			float	mi	=	px_min(in[0],px_min(in[1],in[2]));
++			float	ma	=	px_max(in[0],px_max(in[1],in[2]));
+ 
+ 			out[2]		=	(mi + ma) / 2;
+ 			if (ma == mi) {
+@@ -224,8 +224,8 @@
+ 		break;
+ 	case COLOR_HSV:
+ 		{
+-			float	ma	=	max(in[0],max(in[1],in[2]));
+-			float	mi	=	min(in[0],min(in[1],in[2]));
++			float	ma	=	px_max(in[0],px_max(in[1],in[2]));
++			float	mi	=	px_min(in[0],px_min(in[1],in[2]));
+ 
+ 			out[2]		=	ma;
+ 			out[1]		=	(ma - mi) / ma;
+diff -Naur a/src/ri/irradiance.cpp b/src/ri/irradiance.cpp
+--- a/src/ri/irradiance.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/irradiance.cpp	2017-10-10 01:13:12.635003737 -0400
+@@ -108,7 +108,7 @@
+ 		mulvf(center,0.5f);
+ 		movvv(root->center,center);
+ 		subvv(bmax,bmin);
+-		root->side		=	max(max(bmax[0],bmax[1]),bmax[2]);
++		root->side		=	px_max(px_max(bmax[0],bmax[1]),bmax[2]);
+ 		root->samples	=	NULL;
+ 	}
+ }
+@@ -278,7 +278,7 @@
+ 				e2		=	sqrtf(e2*weightNormalDenominator);
+ 
+ 				// Compute the weight
+-				float	w		=	1 - K*max(e1,e2);
++				float	w		=	1 - K*px_max(e1,e2);
+ 				if (w > context->urand()*smallSampleWeight) {
+ 					vector	ntmp;
+ 
+@@ -682,7 +682,7 @@
+ 				hemisphere->depth			=	ray.t;
+ 				hemisphere->invDepth		=	1 / ray.t;
+ 
+-				if (tmp > horizonCutoff)	rMean =	min(rMean,ray.t);
++				if (tmp > horizonCutoff)	rMean =	px_min(rMean,ray.t);
+ 				
+ 				movvv(hemisphere->dir,ray.dir);
+ 
+@@ -748,7 +748,7 @@
+ 						globalMap->lookup(C,P,N,attributes->photonEstimator);
+ 
+ 						// HACK: Avoid too bright spots
+-						tmp	=	max(max(C[0],C[1]),C[2]);
++						tmp	=	px_max(px_max(C[0],C[1]),C[2]);
+ 						if (tmp > scratch->occlusionParams.maxBrightness)	mulvf(C,scratch->occlusionParams.maxBrightness/tmp);
+ 						
+ 						mulvv(C,attributes->surfaceColor);
+@@ -799,7 +799,7 @@
+ 				hemisphere->depth			=	ray.t;
+ 				hemisphere->invDepth		=	1 / ray.t;
+ 
+-				if (tmp > horizonCutoff)	rMean =	min(rMean,ray.t);
++				if (tmp > horizonCutoff)	rMean =	px_min(rMean,ray.t);
+ 
+ 				movvv(hemisphere->dir,ray.dir);
+ 
+@@ -841,7 +841,7 @@
+ 		rMean					*=	0.5f;
+ 
+ 		// Clamp the radius of validity
+-		rMean					=	min(rMean,db*scratch->occlusionParams.maxPixelDist);
++		rMean					=	px_min(rMean,db*scratch->occlusionParams.maxPixelDist);
+ 		
+ 		// Record the data (in the target coordinate system)
+ 		movvv(cSample->P,P);
+@@ -893,7 +893,7 @@
+ 
+ 		cSample->next	=	cNode->samples;
+ 		cNode->samples	=	cSample;
+-		maxDepth		=	max(depth,maxDepth);
++		maxDepth		=	px_max(depth,maxDepth);
+ 
+ 		osUnlock(mutex);
+ 	}
+@@ -925,8 +925,8 @@
+ 			// Avoid issues with coincident points
+ 			const float 	l	= 	(dotvv(D,D) > C_EPSILON) ? lengthv(D) : C_EPSILON;
+ 
+-			nSample->dP		=	min(nSample->dP,cSample->dP + l);
+-			cSample->dP		=	min(cSample->dP,nSample->dP + l);
++			nSample->dP		=	px_min(nSample->dP,cSample->dP + l);
++			cSample->dP		=	px_min(cSample->dP,nSample->dP + l);
+ 		}
+ 
+ 		// Check the children
+diff -Naur a/src/ri/memory.cpp b/src/ri/memory.cpp
+--- a/src/ri/memory.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/memory.cpp	2017-10-10 01:12:37.967864807 -0400
+@@ -87,7 +87,7 @@
+ 	*/
+ 	lastPagingTime			=	time;
+ 
+-	size					=	max(size,memoryPageSize);
++	size					=	px_max(size,memoryPageSize);
+ 	size					=	(size + 7) & (~7);
+ 
+ 	CMemPage	*newPage	=	new CMemPage;
+diff -Naur a/src/ri/noise.cpp b/src/ri/noise.cpp
+--- a/src/ri/noise.cpp	2017-10-10 01:11:35.371613626 -0400
++++ b/src/ri/noise.cpp	2017-10-10 01:12:37.995864920 -0400
+@@ -106,7 +106,7 @@
+     T	fx0, fx1;
+     T	s, n0, n1;
+ 
+-	px	=	max(px,1);
++	px	=	px_max(px,1);
+ 
+     ix0 = FASTFLOOR( x );
+     fx0 = x - ix0;
+@@ -157,8 +157,8 @@
+     T	fx0, fy0, fx1, fy1;
+     T	s, t, nx0, nx1, n0, n1;
+ 
+-	px	=	max(px,1);
+-	py	=	max(py,1);
++	px	=	px_max(px,1);
++	py	=	px_max(py,1);
+ 
+     ix0 = FASTFLOOR( x );
+     iy0 = FASTFLOOR( y );
+@@ -241,9 +241,9 @@
+     T s, t, r;
+     T nxy0, nxy1, nx0, nx1, n0, n1;
+ 
+-	px	=	max(px,1);
+-	py	=	max(py,1);
+-	pz	=	max(pz,1);
++	px	=	px_max(px,1);
++	py	=	px_max(py,1);
++	pz	=	px_max(pz,1);
+ 
+     ix0 = FASTFLOOR( x );
+     iy0 = FASTFLOOR( y );
+@@ -374,10 +374,10 @@
+     T s, t, r, q;
+     T nxyz0, nxyz1, nxy0, nxy1, nx0, nx1, n0, n1;
+ 
+-	px	=	max(px,1);
+-	py	=	max(py,1);
+-	pz	=	max(pz,1);
+-	pw	=	max(pw,1);
++	px	=	px_max(px,1);
++	py	=	px_max(py,1);
++	pz	=	px_max(pz,1);
++	pw	=	px_max(pw,1);
+ 
+     ix0 = FASTFLOOR( x );
+     iy0 = FASTFLOOR( y );
+diff -Naur a/src/ri/object.cpp b/src/ri/object.cpp
+--- a/src/ri/object.cpp	2017-10-10 01:11:35.371613626 -0400
++++ b/src/ri/object.cpp	2017-10-10 01:13:12.608003629 -0400
+@@ -118,9 +118,9 @@
+ 	for (i=0;i<10;i++) {
+ 		mulmp4(tmp2,mat,tmp);
+ 
+-		alpha	=	max(absf(tmp2[0]),absf(tmp2[1]));
+-		alpha	=	max(alpha,absf(tmp2[2]));
+-		alpha	=	max(alpha,absf(tmp2[3]));
++		alpha	=	px_max(absf(tmp2[0]),absf(tmp2[1]));
++		alpha	=	px_max(alpha,absf(tmp2[2]));
++		alpha	=	px_max(alpha,absf(tmp2[3]));
+ 
+ 		tmp[0]	=	tmp2[0]	/	alpha;
+ 		tmp[1]	=	tmp2[1]	/	alpha;
+@@ -315,8 +315,8 @@
+ 
+ 	subvv(D,bmax,bmin);
+ 	maxD	=	D[0];
+-	maxD	=	max(D[1],maxD);
+-	maxD	=	max(D[2],maxD);
++	maxD	=	px_max(D[1],maxD);
++	maxD	=	px_max(D[2],maxD);
+ 	maxD	*=	attributes->bexpand;
+ 
+ 	// Add the displacement amount of the surface
+@@ -371,8 +371,8 @@
+ 			   total	+=	sqrtf(dx*dx + dy*dy);
+ 		   }
+ 		   cP  +=  3;
+-		   uMax	=	max(uMax,total);
+-		   uMin	=	min(uMin,total);
++		   uMax	=	px_max(uMax,total);
++		   uMin	=	px_min(uMin,total);
+ 	   }
+ 	
+ 	   // V stats
+@@ -387,13 +387,13 @@
+ 			   total	+=	sqrtf(dx*dx + dy*dy);
+ 		   }
+ 	
+-		   vMax	=	max(vMax,total);
+-		   vMin	=	min(vMin,total);
++		   vMax	=	px_max(vMax,total);
++		   vMin	=	px_min(vMin,total);
+ 	   }
+ 	} else {	// non raster oriented
+ 	   vector tmp;
+ 
+-	   float maxDim = max(CRenderer::dPixeldx,CRenderer::dPixeldy);
++	   float maxDim = px_max(CRenderer::dPixeldx,CRenderer::dPixeldy);
+ 	   	if(CRenderer::projection == OPTIONS_PROJECTION_PERSPECTIVE) {
+ 			for (j=0;j<(vdiv+1)*(udiv+1);++j) {
+ 				float x,y;
+@@ -422,8 +422,8 @@
+ 			   total	+=	lengthv(tmp);
+ 		   }
+ 		   cP  +=  3;
+-		   uMax	=	max(uMax,total);
+-		   uMin	=	min(uMin,total);
++		   uMax	=	px_max(uMax,total);
++		   uMin	=	px_min(uMin,total);
+ 	   }
+ 	
+ 	   // V stats
+@@ -437,8 +437,8 @@
+ 			   total	+=	lengthv(tmp);
+ 		   }
+ 	
+-		   vMax	=	max(vMax,total);
+-		   vMin	=	min(vMin,total);
++		   vMax	=	px_max(vMax,total);
++		   vMin	=	px_min(vMin,total);
+ 	   }
+ 	}
+    float	udivf,vdivf;
+@@ -448,10 +448,10 @@
+    vdivf   =	vMax / shadingRate;
+    
+    // Clamp the division amount
+-   udivf	=   max(1,udivf);
+-   vdivf	=   max(1,vdivf);
+-   udivf	=	min(10000,udivf);
+-   vdivf	=	min(10000,vdivf);
++   udivf	=   px_max(1,udivf);
++   vdivf	=   px_max(1,vdivf);
++   udivf	=	px_min(10000,udivf);
++   vdivf	=	px_min(10000,vdivf);
+ 
+    // Estimate the dicing amount
+    if (attributes->flags & ATTRIBUTES_FLAGS_BINARY_DICE) {
+@@ -563,7 +563,7 @@
+ void				CSurface::dice(CShadingContext *rasterizer) {
+ 
+ 	int minU,minV;
+-	int minSplits = max(attributes->minSplits,getDicingStats(0,minU,minV));
++	int minSplits = px_max(attributes->minSplits,getDicingStats(0,minU,minV));
+ 
+ 	CPatch	*cSurface	=	new CPatch(attributes,xform,this,0,1,0,1,0,minSplits);
+ 	cSurface->attach();
+diff -Naur a/src/ri/occlusion.cpp b/src/ri/occlusion.cpp
+--- a/src/ri/occlusion.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/occlusion.cpp	2017-10-10 01:13:12.586003540 -0400
+@@ -83,8 +83,8 @@
+ 		resetHierarchy(cNode->children[2]);
+ 		resetHierarchy(cNode->children[3]);
+ 
+-		cNode->zmax	=	max(	max(cNode->children[0]->zmax,cNode->children[1]->zmax),
+-								max(cNode->children[2]->zmax,cNode->children[3]->zmax));
++		cNode->zmax	=	px_max(	px_max(cNode->children[0]->zmax,cNode->children[1]->zmax),
++								px_max(cNode->children[2]->zmax,cNode->children[3]->zmax));
+ 	}
+ }
+ 
+@@ -184,22 +184,22 @@
+ 		ymax	=	ymax>>(depth-queryDepth);
+ 
+ 		// Clamp the bound in the current bucket
+-		xmin					=	max(xmin,0);
+-		ymin					=	max(ymin,0);
++		xmin					=	px_max(xmin,0);
++		ymin					=	px_max(ymin,0);
+ 		
+ 		// Notes:
+ 		//		This is correct but inefficient due to querying
+-		//			xmax		=	min(xmax,(1<<queryDepth)-1);
+-		//			ymax		=	min(ymax,(1<<queryDepth)-1);
++		//			xmax		=	px_min(xmax,(1<<queryDepth)-1);
++		//			ymax		=	px_min(ymax,(1<<queryDepth)-1);
+ 		// 		This is incorrect because it doesn't account for buckets straddling bucket edge
+-		//			xmax		=	min(xmax,(bw>>(depth-queryDepth))-1);
+-		//			ymax		=	min(ymax,(bh>>(depth-queryDepth))-1);
++		//			xmax		=	px_min(xmax,(bw>>(depth-queryDepth))-1);
++		//			ymax		=	px_min(ymax,(bh>>(depth-queryDepth))-1);
+ 		//		We're using a recurrance, this
+ 		// 			(bw*2+(1<<d))>>d , d = (depth-queryDepth)
+ 		// 		is equivalent but probably slower
+ 		
+-		xmax					=	min(xmax,w-1);
+-		ymax					=	min(ymax,h-1);
++		xmax					=	px_min(xmax,w-1);
++		ymax					=	px_min(ymax,h-1);
+ 
+ 		// Something odd occurred, abort
+ 		if (xmin > xmax) return FALSE;
+diff -Naur a/src/ri/occlusion.h b/src/ri/occlusion.h
+--- a/src/ri/occlusion.h	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/occlusion.h	2017-10-10 01:12:37.940864699 -0400
+@@ -77,8 +77,8 @@
+ 								if (cNode->zmax == pNode->zmax) {
+ 									cNode->zmax	=	z;
+ 
+-									z			=	max(	max(pNode->children[0]->zmax,pNode->children[1]->zmax),
+-															max(pNode->children[2]->zmax,pNode->children[3]->zmax));
++									z			=	px_max(	px_max(pNode->children[0]->zmax,pNode->children[1]->zmax),
++															px_max(pNode->children[2]->zmax,pNode->children[3]->zmax));
+ 
+ 									if (z < pNode->zmax) {
+ 										cNode		=	pNode;
+diff -Naur a/src/ri/patches.h b/src/ri/patches.h
+--- a/src/ri/patches.h	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/patches.h	2017-10-10 01:12:37.946864723 -0400
+@@ -107,7 +107,7 @@
+ 		void			sample(int,int,float **,float ***,unsigned int &) const;
+ 		void			interpolate(int,float **,float ***) const;
+ 
+-		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = max(uOrder-1-depth,1); minDivV = max(vOrder-1-depth,1); return 0; }
++		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = px_max(uOrder-1-depth,1); minDivV = px_max(vOrder-1-depth,1); return 0; }
+ 
+ private:
+ 		void			precompBasisCoefficients(double *,unsigned int,unsigned int,unsigned int,const float *);
+diff -Naur a/src/ri/patchgrid.cpp b/src/ri/patchgrid.cpp
+--- a/src/ri/patchgrid.cpp	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/patchgrid.cpp	2017-10-10 01:13:12.628003709 -0400
+@@ -263,8 +263,8 @@
+ 		for (int i=0;i<numVertices;++i) {
+ 			const	double	cu		=	u[i] * (nu - 1.0);
+ 			const	double	cv		=	v[i] * (nv - 1.0);
+-			const	int		x		=	(int) floor(min(cu,(nu-2)));
+-			const	int		y		=	(int) floor(min(cv,(nv-2)));
++			const	int		x		=	(int) floor(px_min(cu,(nu-2)));
++			const	int		y		=	(int) floor(px_min(cv,(nv-2)));
+ 			const	float	*d0		=	vertexData + ((y+1)*(nu+2) + x+1)*vertexSize;
+ 			const	float	*d1		=	vertexData + ((y+1)*(nu+2) + x+2)*vertexSize;
+ 			const	float	*d2		=	vertexData + ((y+2)*(nu+2) + x+1)*vertexSize;
+@@ -331,8 +331,8 @@
+ 			for (int i=0;i<numVertices;++i,dest+=3) {
+ 				const	float	cu		=	u[i] * (nu - 1.0f);
+ 				const	float	cv		=	v[i] * (nv - 1.0f);
+-				const	int		x		=	(int) floor(min(cu,(nu-2)));
+-				const	int		y		=	(int) floor(min(cv,(nv-2)));
++				const	int		x		=	(int) floor(px_min(cu,(nu-2)));
++				const	int		y		=	(int) floor(px_min(cv,(nv-2)));
+ 				const	float	*d0		=	vertexData + ((y+1)*(nu+2) + x+1)*vertexSize;
+ 				const	float	*d1		=	vertexData + ((y+1)*(nu+2) + x+2)*vertexSize;
+ 				const	float	*d2		=	vertexData + ((y+2)*(nu+2) + x+1)*vertexSize;
+diff -Naur a/src/ri/photon.cpp b/src/ri/photon.cpp
+--- a/src/ri/photon.cpp	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/photon.cpp	2017-10-10 01:13:12.590003556 -0400
+@@ -155,7 +155,7 @@
+ 					photonPower								=	1 / (float) CRenderer::numEmitPhotons;
+ 
+ 					while(emit > 0) {
+-						const int	numVertices					=	min(CRenderer::maxGridSize,emit);
++						const int	numVertices					=	px_min(CRenderer::maxGridSize,emit);
+ 
+ 						currentShadingState->numVertices		=	numVertices;
+ 						currentShadingState->numRealVertices	=	numVertices;
+@@ -372,7 +372,7 @@
+ 		assert(N != NULL);
+ 
+ 		// Save the tangent of the angle for the ray differential
+-		varying[VARIABLE_PW][0]			=	min(DEFAULT_RAY_DA,tanf(theta[0]));
++		varying[VARIABLE_PW][0]			=	px_min(DEFAULT_RAY_DA,tanf(theta[0]));
+ 
+ 		for (;numVertices>0;numVertices--,shaderPs+=3,shaderL+=3) {
+ 
+diff -Naur a/src/ri/photonMap.cpp b/src/ri/photonMap.cpp
+--- a/src/ri/photonMap.cpp	2017-10-10 01:11:35.374613638 -0400
++++ b/src/ri/photonMap.cpp	2017-10-10 01:12:37.955864759 -0400
+@@ -103,7 +103,7 @@
+ 			root			=	new CPhotonNode;
+ 			addvv(root->center,bmin,bmax);
+ 			mulvf(root->center,1 / (float) 2);
+-			root->side		=	max(max(bmax[0]-bmin[0],bmax[1] - bmin[1]),bmax[2] - bmin[2]);
++			root->side		=	px_max(px_max(bmax[0]-bmin[0],bmax[1] - bmin[1]),bmax[2] - bmin[2]);
+ 			root->samples	=	NULL;
+ 			for (int i=0;i<8;i++) root->children[i]	=	NULL;
+ 		#endif
+@@ -337,7 +337,7 @@
+ 
+ 	cSample->next	=	cNode->samples;
+ 	cNode->samples	=	cSample;
+-	maxDepth		=	max(maxDepth,depth);
++	maxDepth		=	px_max(maxDepth,depth);
+ 	
+ 	// unlock the mutex
+ 	osUnlock(mutex);
+@@ -489,7 +489,7 @@
+ 	CPhoton	*ton	=	CMap<CPhoton>::store(P,N);
+ 	dirToItem(ton->theta,ton->phi,I);
+ 	movvv(ton->C,C);
+-	maxPower	=	max(maxPower,dotvv(C,C));
++	maxPower	=	px_max(maxPower,dotvv(C,C));
+ 	osUnlock(mutex);
+ }
+ 
+@@ -532,7 +532,7 @@
+ 			j	=	chunkSize;
+ 		}
+ 
+-		float maxChannel	=	max(max(cT->C[0],cT->C[1]),cT->C[2]);
++		float maxChannel	=	px_max(px_max(cT->C[0],cT->C[1]),cT->C[2]);
+ 		
+ 		movvv(cP,cT->P);
+ 		mulvf(cC,cT->C,1 / maxChannel);
+diff -Naur a/src/ri/pointCloud.cpp b/src/ri/pointCloud.cpp
+--- a/src/ri/pointCloud.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/pointCloud.cpp	2017-10-10 01:12:37.947864727 -0400
+@@ -298,7 +298,7 @@
+ 
+ 	for (int i=0;i<dataSize;i++)	data.push(C[i]);
+ 
+-	maxdP				=	max(maxdP,dP);
++	maxdP				=	px_max(maxdP,dP);
+ 	
+ 	osUnlock(mutex);
+ }
+diff -Naur a/src/ri/pointHierarchy.cpp b/src/ri/pointHierarchy.cpp
+--- a/src/ri/pointHierarchy.cpp	2017-10-10 01:11:35.371613626 -0400
++++ b/src/ri/pointHierarchy.cpp	2017-10-10 01:13:12.586003540 -0400
+@@ -205,8 +205,8 @@
+ 		float					area;
+ 
+ 		subvv(D,node.P,item->P);
+-		if (areaIndex == -1)		area	=	max(((float) C_PI*item->dP*item->dP*dotvv(node.N,item->N)),0);
+-		else						area	=	max((src[areaIndex]*dotvv(node.N,item->N)),0);
++		if (areaIndex == -1)		area	=	px_max(((float) C_PI*item->dP*item->dP*dotvv(node.N,item->N)),0);
++		else						area	=	px_max((src[areaIndex]*dotvv(node.N,item->N)),0);
+ 		
+ 		node.dP		+=	area;
+ 
+@@ -216,7 +216,7 @@
+ 			addvv(node.radiosity,tmp);
+ 		}
+ 
+-		node.dN		=	min(node.dN,dotvv(node.N,item->N));
++		node.dN		=	px_min(node.dN,dotvv(node.N,item->N));
+ 	}
+ 	indices		-=	numItems;
+ 
+@@ -312,11 +312,11 @@
+ 				
+ 				// Compute the distance to the first cluster
+ 				subvv(D,cItem->P,C0);
+-				const float d0	=	dotvv(D,D) / max(dotvv(N0,cItem->N),C_EPSILON);
++				const float d0	=	dotvv(D,D) / px_max(dotvv(N0,cItem->N),C_EPSILON);
+ 				
+ 				// Compute the distance to the second cluster
+ 				subvv(D,cItem->P,C1);
+-				const float d1	=	dotvv(D,D) / max(dotvv(N1,cItem->N),C_EPSILON);
++				const float d1	=	dotvv(D,D) / px_max(dotvv(N1,cItem->N),C_EPSILON);
+ 				
+ 				// Change the membership if necessary
+ 				if (d0 < d1) {
+diff -Naur a/src/ri/points.cpp b/src/ri/points.cpp
+--- a/src/ri/points.cpp	2017-10-10 01:11:35.371613626 -0400
++++ b/src/ri/points.cpp	2017-10-10 01:12:37.970864820 -0400
+@@ -64,14 +64,14 @@
+ 			const float		*vertex	=	pl->data0 + pl->parameters[i].index;
+ 
+ 			for (j=0;j<np;j++) {
+-				maxSize			=	max(maxSize,vertex[j]);
++				maxSize			=	px_max(maxSize,vertex[j]);
+ 			}
+ 
+ 			if (pl->data1 != NULL) {
+ 				vertex	=	pl->data1 + pl->parameters[i].index;
+ 
+ 				for (j=0;j<np;j++) {
+-					maxSize			=	max(maxSize,vertex[j]);
++					maxSize			=	px_max(maxSize,vertex[j]);
+ 				}
+ 			}
+ 
+@@ -79,12 +79,12 @@
+ 		} else if (cVar->entry == VARIABLE_CONSTANTWIDTH) {
+ 			const float		*vertex	=	pl->data0 + pl->parameters[i].index;
+ 
+-			maxSize				=	max(maxSize,vertex[0]);
++			maxSize				=	px_max(maxSize,vertex[0]);
+ 
+ 			if (pl->data1 != NULL) {
+ 				vertex	=	pl->data1 + pl->parameters[i].index;
+ 
+-				maxSize	=	max(maxSize,vertex[0]);
++				maxSize	=	px_max(maxSize,vertex[0]);
+ 			}
+ 
+ 			break;
+diff -Naur a/src/ri/polygons.cpp b/src/ri/polygons.cpp
+--- a/src/ri/polygons.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/polygons.cpp	2017-10-10 01:12:37.951864743 -0400
+@@ -1309,7 +1309,7 @@
+ 	this->vertices		=	new int[nverts];	memcpy(this->vertices,vertices,nverts*sizeof(int));	
+ 
+ 	for (i=0,mVertex=-1;i<nverts;i++) {
+-		mVertex	=	max(mVertex,vertices[i]);
++		mVertex	=	px_max(mVertex,vertices[i]);
+ 	}
+ 	mVertex++;
+ 
+@@ -1671,10 +1671,10 @@
+ 			normalizev(normal);
+ 
+ 			// Find the minor and major axices of the normal ?
+-			if (fabs(normal[COMP_X]) >= max(fabs(normal[COMP_Y]),fabs(normal[COMP_Z]))) {
++			if (fabs(normal[COMP_X]) >= px_max(fabs(normal[COMP_Y]),fabs(normal[COMP_Z]))) {
+ 				majorAxis	=	COMP_Y;
+ 				minorAxis	=	COMP_Z;
+-			} else if (fabs(normal[COMP_Y]) >= max(fabs(normal[COMP_X]),fabs(normal[COMP_Z]))) {
++			} else if (fabs(normal[COMP_Y]) >= px_max(fabs(normal[COMP_X]),fabs(normal[COMP_Z]))) {
+ 				majorAxis	=	COMP_X;
+ 				minorAxis	=	COMP_Z;
+ 			} else {
+diff -Naur a/src/ri/quadrics.cpp b/src/ri/quadrics.cpp
+--- a/src/ri/quadrics.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/quadrics.cpp	2017-10-10 01:13:12.612003645 -0400
+@@ -540,8 +540,8 @@
+ // Comments				:
+ void			CSphere::computeObjectBound(float *bmin,float *bmax,float r,float vmin,float vmax,float umax) {
+ 	float	maxRadius;
+-	float	vmi		=	min(vmin,vmax);
+-	float	vma		=	max(vmin,vmax);
++	float	vmi		=	px_min(vmin,vmax);
++	float	vma		=	px_max(vmin,vmax);
+ 	float	zmin;
+ 	float	zmax;
+ 
+@@ -558,8 +558,8 @@
+ 		maxRadius	=	r;
+ 	}
+ 
+-	initv(bmin,-maxRadius,-maxRadius,min(zmin,zmax));
+-	initv(bmax,maxRadius,maxRadius,max(zmin,zmax));
++	initv(bmin,-maxRadius,-maxRadius,px_min(zmin,zmax));
++	initv(bmax,maxRadius,maxRadius,px_max(zmin,zmax));
+ }
+ 
+ 
+@@ -1358,8 +1358,8 @@
+ 
+ 	r	=	absf(r);
+ 
+-	initv(bmin,-r,-r,min(height,0));
+-	initv(bmax,r,r,max(height,0));
++	initv(bmin,-r,-r,px_min(height,0));
++	initv(bmax,r,r,px_max(height,0));
+ }
+ 
+ 
+@@ -1802,8 +1802,8 @@
+ void			CParaboloid::computeObjectBound(float *bmin,float *bmax,float r,float zmin,float zmax,float umax) {
+ 	r	=	absf(r);
+ 
+-	initv(bmin,-r,-r,min(zmin,zmax));
+-	initv(bmax,r,r,max(zmin,zmax));
++	initv(bmin,-r,-r,px_min(zmin,zmax));
++	initv(bmax,r,r,px_max(zmin,zmax));
+ }
+ 
+ 
+@@ -2230,8 +2230,8 @@
+ void			CCylinder::computeObjectBound(float *bmin,float *bmax,float r,float zmin,float zmax,float umax) {
+ 	r	=	absf(r);
+ 
+-	initv(bmin,-r,-r,min(zmin,zmax));
+-	initv(bmax,r,r,max(zmin,zmax));
++	initv(bmin,-r,-r,px_min(zmin,zmax));
++	initv(bmax,r,r,px_max(zmin,zmax));
+ }
+ 
+ 
+@@ -2757,10 +2757,10 @@
+ 	// FIXME: smaller bound is possible
+ 	bmin[COMP_X]	=	-d;
+ 	bmin[COMP_Y]	=	-d;
+-	bmin[COMP_Z]	=	min(p1[COMP_Z],p2[COMP_Z]);
++	bmin[COMP_Z]	=	px_min(p1[COMP_Z],p2[COMP_Z]);
+ 	bmax[COMP_X]	=	+d;
+ 	bmax[COMP_Y]	=	+d;
+-	bmax[COMP_Z]	=	max(p1[COMP_Z],p2[COMP_Z]);
++	bmax[COMP_Z]	=	px_max(p1[COMP_Z],p2[COMP_Z]);
+ }
+ 
+ 
+diff -Naur a/src/ri/quadrics.h b/src/ri/quadrics.h
+--- a/src/ri/quadrics.h	2017-10-10 01:11:35.371613626 -0400
++++ b/src/ri/quadrics.h	2017-10-10 01:12:37.988864892 -0400
+@@ -54,7 +54,7 @@
+ 		void			interpolate(int,float **,float ***) const;
+ 		void			instantiate(CAttributes *,CXform *,CRendererContext *) const;
+ 
+-		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = minDivV = max(3-depth,1); return 0; }				
++		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = minDivV = px_max(3-depth,1); return 0; }				
+ 
+ private:
+ 		CParameter		*parameters;
+@@ -108,7 +108,7 @@
+ 		void			interpolate(int,float **,float ***) const;
+ 		void			instantiate(CAttributes *,CXform *,CRendererContext *) const;
+ 		
+-		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = max(3-depth,1); minDivV = 1; return 0; }
++		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = px_max(3-depth,1); minDivV = 1; return 0; }
+ 
+ private:
+ 		CParameter		*parameters;
+@@ -136,7 +136,7 @@
+ 		void			interpolate(int,float **,float ***) const;
+ 		void			instantiate(CAttributes *,CXform *,CRendererContext *) const;
+ 		
+-		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = minDivV = max(3-depth,1); return 0; }
++		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = minDivV = px_max(3-depth,1); return 0; }
+ 
+ private:
+ 		CParameter		*parameters;
+@@ -164,7 +164,7 @@
+ 		void			interpolate(int,float **,float ***) const;
+ 		void			instantiate(CAttributes *,CXform *,CRendererContext *) const;
+ 		
+-		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = max(3-depth,1); minDivV = 1; return 0; }
++		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = px_max(3-depth,1); minDivV = 1; return 0; }
+ 
+ private:
+ 		CParameter		*parameters;
+@@ -191,7 +191,7 @@
+ 		void			interpolate(int,float **,float ***) const;
+ 		void			instantiate(CAttributes *,CXform *,CRendererContext *) const;
+ 		
+-		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = minDivV = max(3-depth,1); return 0; }
++		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = minDivV = px_max(3-depth,1); return 0; }
+ 
+ private:
+ 		CParameter		*parameters;
+@@ -220,7 +220,7 @@
+ 		void			interpolate(int,float **,float ***) const;
+ 		void			instantiate(CAttributes *,CXform *,CRendererContext *) const;
+ 		
+-		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = minDivV = max(3-depth,1); return 2; }
++		int				getDicingStats(int depth, int &minDivU,int &minDivV) const { minDivU = minDivV = px_max(3-depth,1); return 2; }
+ 
+ private:
+ 		CParameter		*parameters;
+diff -Naur a/src/ri/radiance.cpp b/src/ri/radiance.cpp
+--- a/src/ri/radiance.cpp	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/radiance.cpp	2017-10-10 01:13:12.637003745 -0400
+@@ -249,7 +249,7 @@
+ 							// Check if the function we're approximating is smooth or not
+ 							if ((index < 10) || (index >= (SINTABLE_SIZE - 10))) {
+ 								// The function is not smooth in this range, compute it the brute force way
+-								const float	alphat	=	(float) acos(max(min(alpha,1),-1));
++								const float	alphat	=	(float) acos(px_max(px_min(alpha,1),-1));
+ 								vector		R;
+ 
+ 								crossvv(R,c1,c0);
+@@ -306,7 +306,7 @@
+ 						C[2]		+=	formFactor*cTriangle->C[2];
+ 						C[3]		+=	formFactor;
+ 						dist		=	sqrtf(dist);
+-						dP			=	min(dP,dist);
++						dP			=	px_min(dP,dist);
+ 					}
+ 
+ 					C[4]		=	dP;
+@@ -350,7 +350,7 @@
+ 		root						=	(CRadianceNode *) memory->alloc(sizeof(CRadianceNode));
+ 		addvv(root->center,bmin,bmax);
+ 		mulvf(root->center,(float) 0.5);
+-		root->side					=	max(max(bmax[0] - bmin[0],bmax[1] - bmin[1]),bmax[2] - bmin[2]);
++		root->side					=	px_max(px_max(bmax[0] - bmin[0],bmax[1] - bmin[1]),bmax[2] - bmin[2]);
+ 		root->samples				=	NULL;
+ 		for (i=0;i<8;i++) root->children[i]	=	NULL;
+ 		maxDepth					=	1;
+@@ -567,7 +567,7 @@
+ 			for(;numShadingPoints>0;numShadingPoints--) {
+ 				cSample			=	*samples++;
+ 
+-				harmonicTransform(y,cSample->N);	// y = harmonic transform of the function max(I.N,0)
++				harmonicTransform(y,cSample->N);	// y = harmonic transform of the function px_max(I.N,0)
+ 				stack			=	stackBase;
+ 				totalWeight		=	0;
+ 				initv(global,0);
+@@ -587,9 +587,9 @@
+ 						if ((nominator = dotvv(D,D)) > (cHarmonic->dP*cHarmonic->dP)) continue;
+ 
+ 						n			=	dotvv(cSample->N,cHarmonic->N);
+-						t			=	cHarmonic->dP*max(n,(float) 0.01);
++						t			=	cHarmonic->dP*px_max(n,(float) 0.01);
+ 						w			=	(float) exp(-nominator*3 / (t*t));
+-						w			=	max(w,C_EPSILON);
++						w			=	px_max(w,C_EPSILON);
+ 
+ 						assert(w <= 1);
+ 						assert(w > 0);
+@@ -629,7 +629,7 @@
+ 				}
+ 
+ 				cDep			=	hash->photons + cSample->depSample;
+-				const float	w	=	max((1 - cDep->C[3]),0);
++				const float	w	=	px_max((1 - cDep->C[3]),0);
+ 				cDep->C[0]		=	global[0]*w + cDep->C[0];
+ 				cDep->C[1]		=	global[1]*w + cDep->C[1];
+ 				cDep->C[2]		=	global[2]*w + cDep->C[2];
+@@ -1014,8 +1014,8 @@
+ 			cSample	=	points[i];
+ 
+ 			subvv(D,P,cSample->P);
+-			dP		=	max(dP,dotvv(D,D));
+-			dN		=	min(dN,dotvv(N,cSample->N));
++			dP		=	px_max(dP,dotvv(D,D));
++			dN		=	px_min(dN,dotvv(N,cSample->N));
+ 		}
+ 
+ 		dP		=	sqrtf(dP);				// This is the radius of the cluster
+@@ -1185,7 +1185,7 @@
+ 
+ 			cHarmonic->next		=	cNode->samples;
+ 			cNode->samples		=	cHarmonic;
+-			maxDepth			=	max(maxDepth,depth);
++			maxDepth			=	px_max(maxDepth,depth);
+ 
+ 
+ #ifdef DEBUG_PRINT
+diff -Naur a/src/ri/raytracer.cpp b/src/ri/raytracer.cpp
+--- a/src/ri/raytracer.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/raytracer.cpp	2017-10-10 01:13:12.591003560 -0400
+@@ -345,8 +345,8 @@
+ 
+ 			left			=	x*CRenderer::bucketWidth;
+ 			top				=	y*CRenderer::bucketHeight;
+-			width			=	min(CRenderer::bucketWidth,CRenderer::xPixels-left);
+-			height			=	min(CRenderer::bucketHeight,CRenderer::yPixels-top);
++			width			=	px_min(CRenderer::bucketWidth,CRenderer::xPixels-left);
++			height			=	px_min(CRenderer::bucketHeight,CRenderer::yPixels-top);
+ 
+ 			// Sample the framebuffer
+ 			sample(left,top,width,height);
+@@ -410,8 +410,8 @@
+ 		
+ 		for (j=0;j<ysamples;j+=8) {
+ 			for (i=0;i<xsamples;i+=8) {
+-				const int	my	=	min(ysamples-j,8);
+-				const int	mx	=	min(xsamples-i,8);
++				const int	my	=	px_min(ysamples-j,8);
++				const int	mx	=	px_min(xsamples-i,8);
+ 
+ 				for (y=0;y<my;y++) {
+ 					for (x=0;x<mx;x++) {
+@@ -562,10 +562,10 @@
+ 		int			pt			=	iy - ph;
+ 		int			pb			=	iy + ph;
+ 
+-		pl				=	max(pl,left);
+-		pt				=	max(pt,top);
+-		pr				=	min(pr,left + xpixels - 1);
+-		pb				=	min(pb,top + ypixels - 1);
++		pl				=	px_max(pl,left);
++		pt				=	px_max(pt,top);
++		pr				=	px_min(pr,left + xpixels - 1);
++		pb				=	px_min(pb,top + ypixels - 1);
+ 
+ 		/*
+ 		for (pixelY=pt;pixelY<=pb;pixelY++) {
+diff -Naur a/src/ri/remoteChannel.cpp b/src/ri/remoteChannel.cpp
+--- a/src/ri/remoteChannel.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/remoteChannel.cpp	2017-10-10 01:12:37.996864924 -0400
+@@ -631,7 +631,7 @@
+ 			
+ 			cSample->next		=	cNode->samples;
+ 			cNode->samples		=	cSample;
+-			cache->maxDepth		=	max(depth,cache->maxDepth);
++			cache->maxDepth		=	px_max(depth,cache->maxDepth);
+ 		}
+ 		
+ 		rcRecv(s,&numSamples,sizeof(int),FALSE);
+diff -Naur a/src/ri/rendererClipping.cpp b/src/ri/rendererClipping.cpp
+--- a/src/ri/rendererClipping.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/rendererClipping.cpp	2017-10-10 01:13:12.631003721 -0400
+@@ -41,10 +41,10 @@
+ // Comments				:
+ void		CRenderer::beginClipping() {
+ 
+-	const float	minX		=	min(pixelLeft,pixelRight);	// The extend of the rendering window on the image
+-	const float	maxX		=	max(pixelLeft,pixelRight);	// plane
+-	const float	minY		=	min(pixelTop,pixelBottom);
+-	const float	maxY		=	max(pixelTop,pixelBottom);
++	const float	minX		=	px_min(pixelLeft,pixelRight);	// The extend of the rendering window on the image
++	const float	maxX		=	px_max(pixelLeft,pixelRight);	// plane
++	const float	minY		=	px_min(pixelTop,pixelBottom);
++	const float	maxY		=	px_max(pixelTop,pixelBottom);
+ 
+ 	// Compute the equations of the clipping planes
+ 	// The visible points are:
+diff -Naur a/src/ri/rendererContext.cpp b/src/ri/rendererContext.cpp
+--- a/src/ri/rendererContext.cpp	2017-10-10 01:11:35.374613638 -0400
++++ b/src/ri/rendererContext.cpp	2017-10-10 01:13:12.627003705 -0400
+@@ -811,7 +811,7 @@
+ 	}
+ 
+ 	options				=	getOptions(TRUE);
+-	options->clipMin	=	max(hither,C_EPSILON);
++	options->clipMin	=	px_max(hither,C_EPSILON);
+ 	options->clipMax	=	yon;
+ 	options->flags		|=	OPTIONS_FLAGS_CUSTOM_CLIPPING;
+ }
+@@ -2850,7 +2850,7 @@
+ 	}
+ 
+ 	for (i=0;i<nvertices;i++) {
+-		mvertex		=	max(mvertex,verts[i]);
++		mvertex		=	px_max(mvertex,verts[i]);
+ 	}
+ 
+ 	pl				=	parseParameterList(npolys,mvertex+1,0,nvertices,n,tokens,params,RI_P,PL_VARYING_TO_VERTEX,attributes);
+@@ -2926,7 +2926,7 @@
+ 	}
+ 
+ 	for (i=0;i<sverts;i++) {
+-		numVertices	=	max(numVertices,verts[i]);
++		numVertices	=	px_max(numVertices,verts[i]);
+ 	}
+ 	
+ 	pl				=	parseParameterList(npolys,numVertices+1,0,sverts,n,tokens,params,RI_P,PL_VARYING_TO_VERTEX,attributes);
+@@ -3493,8 +3493,8 @@
+ 			parameters	=	pl->varying(0,1,2,3,parameters);;
+ 
+ 			tmp			=	absf(p0[0]);
+-			p0[1]		=	min(max(p0[1],-tmp),tmp);
+-			p0[2]		=	min(max(p0[2],-tmp),tmp);
++			p0[1]		=	px_min(px_max(p0[1],-tmp),tmp);
++			p0[2]		=	px_min(px_max(p0[2],-tmp),tmp);
+ 			p0[1]		=	(float) asin(p0[1] / p0[0]);
+ 			p0[2]		=	(float) asin(p0[2] / p0[0]);
+ 
+@@ -3518,14 +3518,14 @@
+ 			parameters	=	pl->varying(0,1,2,3,parameters);;
+ 
+ 			tmp			=	absf(p0[0]);
+-			p0[1]		=	min(max(p0[1],-tmp),tmp);
+-			p0[2]		=	min(max(p0[2],-tmp),tmp);
++			p0[1]		=	px_min(px_max(p0[1],-tmp),tmp);
++			p0[2]		=	px_min(px_max(p0[2],-tmp),tmp);
+ 			p0[1]		=	(float) asin(p0[1] / p0[0]);
+ 			p0[2]		=	(float) asin(p0[2] / p0[0]);
+ 
+ 			tmp			=	absf(p0[1]);
+-			p1[1]		=	min(max(p1[1],-tmp),tmp);
+-			p1[2]		=	min(max(p1[2],-tmp),tmp);
++			p1[1]		=	px_min(px_max(p1[1],-tmp),tmp);
++			p1[2]		=	px_min(px_max(p1[2],-tmp),tmp);
+ 			p1[1]		=	(float) asin(p1[1] / p1[0]);
+ 			p1[2]		=	(float) asin(p1[2] / p1[0]);
+ 
+diff -Naur a/src/ri/renderer.cpp b/src/ri/renderer.cpp
+--- a/src/ri/renderer.cpp	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/renderer.cpp	2017-10-10 01:12:37.982864868 -0400
+@@ -771,8 +771,8 @@
+ 	}
+ 
+ 	// The sample offsets
+-	xSampleOffset		=	(int) ceil(max(	(CRenderer::pixelFilterWidth-1)*CRenderer::pixelXsamples  / 2.0 , 0));
+-	ySampleOffset		=	(int) ceil(max(	(CRenderer::pixelFilterHeight-1)*CRenderer::pixelYsamples / 2.0 , 0));
++	xSampleOffset		=	(int) ceil(px_max(	(CRenderer::pixelFilterWidth-1)*CRenderer::pixelXsamples  / 2.0 , 0));
++	ySampleOffset		=	(int) ceil(px_max(	(CRenderer::pixelFilterHeight-1)*CRenderer::pixelYsamples / 2.0 , 0));
+ 
+ 	// The clipping region we have
+ 	sampleClipLeft		=	(float) (						-	xSampleOffset);
+diff -Naur a/src/ri/rendererJobs.cpp b/src/ri/rendererJobs.cpp
+--- a/src/ri/rendererJobs.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/rendererJobs.cpp	2017-10-10 01:13:12.585003536 -0400
+@@ -162,7 +162,7 @@
+ 
+ 		// There are still photons to trace
+ 		job.type		=	CJob::PHOTON_BUNDLE;
+-		job.numPhotons	=	min(1000,numEmitPhotons-currentPhoton);	// Shoot 1000 photons at a time
++		job.numPhotons	=	px_min(1000,numEmitPhotons-currentPhoton);	// Shoot 1000 photons at a time
+ 		currentPhoton	+=	job.numPhotons;
+ 		
+ 		if (CRenderer::flags & OPTIONS_FLAGS_PROGRESS)	{
+@@ -224,9 +224,9 @@
+ 		// Has the bucket been assigned before ?
+ 		if (bucket(x,y) == -1) {
+ 			int	left	=	(x / netXBuckets)*netXBuckets;
+-			int	right	=	min((left + netXBuckets),xBuckets);
++			int	right	=	px_min((left + netXBuckets),xBuckets);
+ 			int	top		=	(y / netYBuckets)*netYBuckets;
+-			int	bottom	=	min((top + netYBuckets),yBuckets);
++			int	bottom	=	px_min((top + netYBuckets),yBuckets);
+ 			int	i,j;
+ 
+ 			// The bucket is not assigned ...
+diff -Naur a/src/ri/rendererNetwork.cpp b/src/ri/rendererNetwork.cpp
+--- a/src/ri/rendererNetwork.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/rendererNetwork.cpp	2017-10-10 01:13:12.642003765 -0400
+@@ -347,8 +347,8 @@
+ 		// Transfer the file
+ 		fseek(in,start,SEEK_SET);
+ 		for (csize=size;csize>0;csize-=NETWORK_BUFFER_LENGTH) {
+-			fread(buffer,min(csize,NETWORK_BUFFER_LENGTH),sizeof(char),in);
+-			rcSend(netServers[index],buffer,min(csize,NETWORK_BUFFER_LENGTH),FALSE);
++			fread(buffer,px_min(csize,NETWORK_BUFFER_LENGTH),sizeof(char),in);
++			rcSend(netServers[index],buffer,px_min(csize,NETWORK_BUFFER_LENGTH),FALSE);
+ 		}
+ 
+ 		fclose(in);
+@@ -401,8 +401,8 @@
+ 
+ 		// Write down the file
+ 		for (csize=tsize;csize>0;csize-=NETWORK_BUFFER_LENGTH) {
+-			rcRecv(netClient,buf,min(NETWORK_BUFFER_LENGTH,csize),FALSE);
+-			fwrite(buf,min(NETWORK_BUFFER_LENGTH,csize),sizeof(char),file);
++			rcRecv(netClient,buf,px_min(NETWORK_BUFFER_LENGTH,csize),FALSE);
++			fwrite(buf,px_min(NETWORK_BUFFER_LENGTH,csize),sizeof(char),file);
+ 		}
+ 
+ 		r	=	tsize;
+diff -Naur a/src/ri/reyes.cpp b/src/ri/reyes.cpp
+--- a/src/ri/reyes.cpp	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/reyes.cpp	2017-10-10 01:13:12.620003677 -0400
+@@ -270,8 +270,8 @@
+ #define computeExtends																									\
+ 	bucketPixelLeft		=	currentXBucket*CRenderer::bucketWidth;														\
+ 	bucketPixelTop		=	currentYBucket*CRenderer::bucketHeight;														\
+-	bucketPixelWidth	=	min(CRenderer::bucketWidth,		CRenderer::xPixels-bucketPixelLeft);						\
+-	bucketPixelHeight	=	min(CRenderer::bucketHeight,	CRenderer::yPixels-bucketPixelTop);							\
++	bucketPixelWidth	=	px_min(CRenderer::bucketWidth,		CRenderer::xPixels-bucketPixelLeft);						\
++	bucketPixelHeight	=	px_min(CRenderer::bucketHeight,	CRenderer::yPixels-bucketPixelTop);							\
+ 	tbucketLeft			=	bucketPixelLeft*CRenderer::pixelXsamples - CRenderer::xSampleOffset;						\
+ 	tbucketTop			=	bucketPixelTop*CRenderer::pixelYsamples - CRenderer::ySampleOffset;							\
+ 	tbucketRight		=	(bucketPixelLeft + bucketPixelWidth)*CRenderer::pixelXsamples - CRenderer::xSampleOffset;	\
+@@ -597,8 +597,8 @@
+ 	if (bmin[COMP_Z] > CRenderer::clipMax)	{	return;	}
+ 
+ 	// Clamp da bounding box
+-	const float	zmin	=	max(bmin[COMP_Z],CRenderer::clipMin);
+-	const float	zmax	=	min(bmax[COMP_Z],CRenderer::clipMax);
++	const float	zmin	=	px_max(bmin[COMP_Z],CRenderer::clipMin);
++	const float	zmax	=	px_min(bmax[COMP_Z],CRenderer::clipMax);
+ 
+ 	assert(zmin <= zmax);
+ 	
+@@ -650,7 +650,7 @@
+ 
+ 	// Account for the depth of field
+ 	if (CRenderer::aperture != 0) {
+-		const	float	mcoc	=	max(cocScreen(zmin),cocScreen(zmax));
++		const	float	mcoc	=	px_max(cocScreen(zmin),cocScreen(zmax));
+ 		xmin					=	xmin-mcoc;
+ 		xmax					=	xmax+mcoc;
+ 		ymin					=	ymin-mcoc;
+@@ -681,10 +681,10 @@
+ 	if (xmax < CRenderer::sampleClipLeft)		return;
+ 	if (ymax < CRenderer::sampleClipTop)		return;
+ 
+-	xmin							=	max(xmin,0);
+-	ymin							=	max(ymin,0);
+-	xmax							=	min(xmax,CRenderer::sampleClipRight);
+-	ymax							=	min(ymax,CRenderer::sampleClipBottom);
++	xmin							=	px_max(xmin,0);
++	ymin							=	px_max(ymin,0);
++	xmax							=	px_min(xmax,CRenderer::sampleClipRight);
++	ymax							=	px_min(ymax,CRenderer::sampleClipBottom);
+ 
+ 	// Record the object
+ 	CRasterObject	*cObject		=	newObject(object);
+@@ -1420,7 +1420,7 @@
+ 		// Expand the bound by the maximum focal blur amount
+ 		const	float	coc1	=	cocSamples(zmin);
+ 		const	float	coc2	=	cocSamples(zmax);
+-		const	float	mcoc	=	max(coc1,coc2);
++		const	float	mcoc	=	px_max(coc1,coc2);
+ 
+ 		xmin	-=	mcoc;
+ 		xmax	+=	mcoc;
+@@ -1457,12 +1457,12 @@
+ 			if (grid->flags & RASTER_MOVING) {
+ 				P				+=	CRenderer::numExtraSamples + 10;
+ 
+-				xbound[0]		=	min(xbound[0],P[0]);
+-				xbound[1]		=	max(xbound[1],P[0]);
+-				ybound[0]		=	min(ybound[0],P[1]);
+-				ybound[1]		=	max(ybound[1],P[1]);
++				xbound[0]		=	px_min(xbound[0],P[0]);
++				xbound[1]		=	px_max(xbound[1],P[0]);
++				ybound[0]		=	px_min(ybound[0],P[1]);
++				ybound[1]		=	px_max(ybound[1],P[1]);
+ 
+-				const float maxSize	=	max(sizes[0],sizes[1]);
++				const float maxSize	=	px_max(sizes[0],sizes[1]);
+ 
+ 				xbound[0]		-=	maxSize;
+ 				ybound[0]		-=	maxSize;
+@@ -1573,7 +1573,7 @@
+ 					const float	c2		=	cVertex[9 + numVertexSamples];
+ 					const float	c3		=	cVertex[9 + numVertexSamples*(udiv+1)];
+ 					const float	c4		=	cVertex[9 + numVertexSamples*(udiv+2)];
+-					const float	mcoc	=	max(max(max(c1,c2),c3),c4);
++					const float	mcoc	=	px_max(px_max(px_max(c1,c2),c3),c4);
+ 
+ 					xbound[0]			-=	mcoc;
+ 					xbound[1]			+=	mcoc;
+@@ -1597,8 +1597,8 @@
+ 	}
+ 
+ 
+-	xmin							=	max(xmin,0);
+-	ymin							=	max(ymin,0);
++	xmin							=	px_max(xmin,0);
++	ymin							=	px_max(ymin,0);
+ 
+ 	// Save the bound of the grid
+ 	grid->xbound[0]					=	(int) floor(xmin);
+@@ -1645,8 +1645,8 @@
+ 	}
+ 
+ 	// Guard
+-	sx			=	max(0,sx);
+-	sy			=	max(0,sy);
++	sx			=	px_max(0,sx);
++	sy			=	px_max(0,sy);
+ 
+ 	int			i;
+ 	int			refCount	=	0;
+diff -Naur a/src/ri/ribOut.cpp b/src/ri/ribOut.cpp
+--- a/src/ri/ribOut.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/ribOut.cpp	2017-10-10 01:12:37.942864707 -0400
+@@ -797,7 +797,7 @@
+ 
+ 	out("[");
+ 	for (i=0;i<nvertices;i++) {
+-		mvertex		=	max(mvertex,verts[i]);
++		mvertex		=	px_max(mvertex,verts[i]);
+ 		out("%d ",verts[i]);
+ 	}
+ 	out("] ");
+@@ -833,7 +833,7 @@
+ 
+ 	out("[");
+ 	for (i=0;i<sverts;i++) {
+-		nvertices	=	max(nvertices,verts[i]+1);
++		nvertices	=	px_max(nvertices,verts[i]+1);
+ 		out("%d ",verts[i]);
+ 	}
+ 	out("] ");
+diff -Naur a/src/ri/scriptFunctions.h b/src/ri/scriptFunctions.h
+--- a/src/ri/scriptFunctions.h	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/scriptFunctions.h	2017-10-10 01:13:12.622003685 -0400
+@@ -144,11 +144,11 @@
+ DEFFUNC(Tan			,"tan"		,"f=f",FUN2EXPR_PRE,SIMPLEFUNCTION,FUN2EXPR_UPDATE(1,1),NULL_EXPR,0)
+ #undef	FUNCTION
+ 
+-#define	FUNCTION(x)	asin(max(min(x,1),-1))
++#define	FUNCTION(x)	asin(px_max(px_min(x,1),-1))
+ DEFFUNC(Asin		,"asin"		,"f=f",FUN2EXPR_PRE,SIMPLEFUNCTION,FUN2EXPR_UPDATE(1,1),NULL_EXPR,0)
+ #undef	FUNCTION
+ 
+-#define	FUNCTION(x)	acos(max(min(x,1),-1))
++#define	FUNCTION(x)	acos(px_max(px_min(x,1),-1))
+ DEFFUNC(Acos		,"acos"		,"f=f",FUN2EXPR_PRE,SIMPLEFUNCTION,FUN2EXPR_UPDATE(1,1),NULL_EXPR,0)
+ #undef	FUNCTION
+ 
+@@ -160,15 +160,15 @@
+ DEFFUNC(Exp			,"exp"		,"f=f",FUN2EXPR_PRE,SIMPLEFUNCTION,FUN2EXPR_UPDATE(1,1),NULL_EXPR,0)
+ #undef	FUNCTION
+ 
+-#define	FUNCTION(x)	log(max(x,C_EPSILON))
++#define	FUNCTION(x)	log(px_max(x,C_EPSILON))
+ DEFFUNC(Log			,"log"		,"f=f",FUN2EXPR_PRE,SIMPLEFUNCTION,FUN2EXPR_UPDATE(1,1),NULL_EXPR,0)
+ #undef	FUNCTION
+ 
+-#define	FUNCTION(x)	sqrt(max(x,0))
++#define	FUNCTION(x)	sqrt(px_max(x,0))
+ DEFFUNC(Sqrt		,"sqrt"		,"f=f",FUN2EXPR_PRE,SIMPLEFUNCTION,FUN2EXPR_UPDATE(1,1),NULL_EXPR,0)
+ #undef	FUNCTION
+ 
+-#define	FUNCTION(x)	isqrtf(max(x,0))
++#define	FUNCTION(x)	isqrtf(px_max(x,0))
+ DEFFUNC(InvSqrt		,"inversesqrt"	,"f=f",FUN2EXPR_PRE,SIMPLEFUNCTION,FUN2EXPR_UPDATE(1,1),NULL_EXPR,0)
+ #undef	FUNCTION
+ 
+diff -Naur a/src/ri/shaderFunctions.h b/src/ri/shaderFunctions.h
+--- a/src/ri/shaderFunctions.h	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/shaderFunctions.h	2017-10-10 01:12:37.977864848 -0400
+@@ -1033,7 +1033,7 @@
+ 									tags		=	tagStart;
+ 
+ #define PHONGEXPR				normalizev(Ltmp,L);													\
+-								const float coefficient = (1.0f-ns[0]) * (float) pow(max(0,dotvv(refDir,Ltmp)),*size);			\
++								const float coefficient = (1.0f-ns[0]) * (float) pow(px_max(0,dotvv(refDir,Ltmp)),*size);			\
+ 								if (coefficient > 0) {												\
+ 									R[COMP_R] += coefficient * Cl[COMP_R];							\
+ 									R[COMP_G] += coefficient * Cl[COMP_G];							\
+@@ -1066,7 +1066,7 @@
+ 
+ #define SPECULARBRDFEXPR		addvv(halfway,op3,op1);												\
+ 								normalizev(halfway);												\
+-								res[0]	=	(float) pow(max(0,dotvv(op2,halfway)),(10.0f)/(*op4));	\
++								res[0]	=	(float) pow(px_max(0,dotvv(op2,halfway)),(10.0f)/(*op4));	\
+ 								res[1]	=	res[0];													\
+ 								res[2]	=	res[1];													\
+ 
+@@ -1780,7 +1780,7 @@
+ 									movvv(rays->P,P);																\
+ 									mulvf(rays->dPdu,dPdu,(*du)*swidth);											\
+ 									mulvf(rays->dPdv,dPdv,(*dv)*twidth);											\
+-									rays->coneAngle		=	max(scratch->traceParams.coneAngle,scratch->textureParams.blur);	\
++									rays->coneAngle		=	px_max(scratch->traceParams.coneAngle,scratch->textureParams.blur);	\
+ 									rays->numSamples	=	(int) scratch->traceParams.samples;						\
+ 									rays->bias			=	scratch->traceParams.bias;								\
+ 									rays->sampleBase	=	scratch->traceParams.sampleBase;						\
+@@ -1880,7 +1880,7 @@
+ 									subvv(rays->D,D,L);																\
+ 									mulvf(rays->dDdu,dPdu,(*du)*swidth);											\
+ 									mulvf(rays->dDdv,dPdv,(*dv)*twidth);											\
+-									rays->coneAngle		=	max(scratch->traceParams.coneAngle,scratch->textureParams.blur);	\
++									rays->coneAngle		=	px_max(scratch->traceParams.coneAngle,scratch->textureParams.blur);	\
+ 									rays->sampleBase	=	scratch->traceParams.sampleBase;						\
+ 									rays->numSamples	=	(int) scratch->traceParams.samples;						\
+ 									rays->bias			=	scratch->traceParams.bias;								\
+@@ -1978,7 +1978,7 @@
+ 								for (int i=0;i<numVertices;++i) {													\
+ 									dsdu[i]		=	fabs(dsdu[i]*du[i]);											\
+ 									dsdv[i]		=	fabs(dsdv[i]*dv[i]);											\
+-									fwidth[i]	=	scratch->textureParams.width*max(dsdu[i] + dsdv[i],C_EPSILON);	\
++									fwidth[i]	=	scratch->textureParams.width*px_max(dsdu[i] + dsdv[i],C_EPSILON);	\
+ 								}
+ 
+ #define	FILTERSTEP2EXPR			plReady();																			\
+diff -Naur a/src/ri/shading.cpp b/src/ri/shading.cpp
+--- a/src/ri/shading.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/shading.cpp	2017-10-10 01:13:12.646003781 -0400
+@@ -750,8 +750,8 @@
+ 				// sampling becomes grossly inaccurate, and in recursive raytracing, db
+ 				// grows unboundedly, causing inf and nan, and messing up filtering
+ 				// These are the 0-1 patch uvs, not the expanded range uvs, so this is OK.
+-				const float	dud		=	min(ku * dest * isqrtf(lengthu) + C_EPSILON,1.0f);
+-				const float	dvd		=	min(kv * dest * isqrtf(lengthv) + C_EPSILON,1.0f);
++				const float	dud		=	px_min(ku * dest * isqrtf(lengthu) + C_EPSILON,1.0f);
++				const float	dvd		=	px_min(kv * dest * isqrtf(lengthv) + C_EPSILON,1.0f);
+ 				
+ 				// Create one more shading point at (u + du,v)
+ 				u[j]		=	u[i] + dud;
+@@ -810,7 +810,7 @@
+ 			
+ 			// Project the grid vertices first
+ 			// PS: The offset is not important, so do not compute it
+-			const float maxdPixeldxy = max(CRenderer::dPixeldx,CRenderer::dPixeldy);
++			const float maxdPixeldxy = px_max(CRenderer::dPixeldx,CRenderer::dPixeldy);
+ 			const float dPixeldx = (currentAttributes->flags & ATTRIBUTES_FLAGS_NONRASTERORIENT_DICE) ? 1.0f : CRenderer::dPixeldx;
+ 			const float dPixeldy = (currentAttributes->flags & ATTRIBUTES_FLAGS_NONRASTERORIENT_DICE) ? 1.0f : CRenderer::dPixeldy;
+ 			if (CRenderer::projection == OPTIONS_PROJECTION_PERSPECTIVE) {
+@@ -889,8 +889,8 @@
+ 						float		cSr	=	shadingRate*isqrtf(dx*dx + dy*dy);
+ 						if (cSr > MAX_DIFFERENTIAL_DISCREPANCY)	cSr	=	MAX_DIFFERENTIAL_DISCREPANCY;
+ 						d		=	cSr*(cU[1] - cU[0]);
+-						d		=	min(d,1);
+-						d		=	max(d,C_EPSILON);
++						d		=	px_min(d,1);
++						d		=	px_max(d,C_EPSILON);
+ 						assert(d > 0);
+ 						assert(d <= 1);
+ 						cDU[0]	=	d;
+@@ -917,8 +917,8 @@
+ 						float		cSr		=	shadingRate*isqrtf(dx*dx + dy*dy);
+ 						if (cSr > MAX_DIFFERENTIAL_DISCREPANCY)	cSr	=	MAX_DIFFERENTIAL_DISCREPANCY;
+ 						d		=	cSr*(cV[uVertices] - cV[0]);
+-						d		=	max(d,C_EPSILON);
+-						d		=	min(d,1);
++						d		=	px_max(d,C_EPSILON);
++						d		=	px_min(d,1);
+ 						assert(d > 0);
+ 						assert(d <= 1);
+ 						cDV[0]	=	d;
+@@ -955,8 +955,8 @@
+ 						float		cSr		=	shadingRate*isqrtf(dx*dx + dy*dy + dz*dz);
+ 						if (cSr > MAX_DIFFERENTIAL_DISCREPANCY)	cSr	=	MAX_DIFFERENTIAL_DISCREPANCY;
+ 						d		=	cSr*(cU[1] - cU[0]);
+-						d		=	min(d,1);
+-						d		=	max(d,C_EPSILON);
++						d		=	px_min(d,1);
++						d		=	px_max(d,C_EPSILON);
+ 						assert(d > 0);
+ 						assert(d <= 1);
+ 						cDU[0]	=	d;
+@@ -990,8 +990,8 @@
+ 						float		cSr		=	shadingRate*isqrtf(dx*dx + dy*dy + dz*dz);
+ 						if (cSr > MAX_DIFFERENTIAL_DISCREPANCY)	cSr	=	MAX_DIFFERENTIAL_DISCREPANCY;
+ 						d		=	cSr*(cV[uVertices] - cV[0]);
+-						d		=	max(d,C_EPSILON);
+-						d		=	min(d,1);
++						d		=	px_max(d,C_EPSILON);
++						d		=	px_min(d,1);
+ 						assert(d > 0);
+ 						assert(d <= 1);
+ 						cDV[0]	=	d;
+diff -Naur a/src/ri/stochastic.cpp b/src/ri/stochastic.cpp
+--- a/src/ri/stochastic.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/stochastic.cpp	2017-10-10 01:13:12.613003649 -0400
+@@ -89,7 +89,7 @@
+ 	numFragments	=	0;
+ 
+ 	// Initialize the occlusion culler
+-	initCuller(max(totalWidth,totalHeight), &maxDepth);
++	initCuller(px_max(totalWidth,totalHeight), &maxDepth);
+ }
+ 
+ ///////////////////////////////////////////////////////////////////////
+@@ -242,7 +242,7 @@
+ #define depthFilterTouchNodeZMin()	touchNode(pixel->node,z);
+ 
+ #define depthFilterIfZMid()			pixel->zold		=	pixel->z;
+-#define depthFilterElseZMid()		else {	pixel->zold	=	min(pixel->zold,z);	}
++#define depthFilterElseZMid()		else {	pixel->zold	=	px_min(pixel->zold,z);	}
+ #define depthFilterTouchNodeZMid()	touchNode(pixel->node,pixel->zold);
+ 
+ 
+@@ -582,7 +582,7 @@
+ 					// otherwise we'd be in the first case)
+ 					Z2[0]	=	Z[0];
+ 				}
+-				Z2[0] = max(Z2[0],cPixel->zold);
++				Z2[0] = px_max(Z2[0],cPixel->zold);
+  			}
+ 			
+ 			#undef NonCompositeSampleLoop
+@@ -767,7 +767,7 @@
+ 				cPixel = cPixelLine;
+ 				for (i=0;i<xres;i++) {			
+ 					for (sx=0;sx<CRenderer::pixelXsamples;sx++,cSample+=pixelSize) {
+-						cPixel[4]		=	min(cPixel[4],cSample[1]);
++						cPixel[4]		=	px_min(cPixel[4],cSample[1]);
+ 					}
+ 					cPixel += CRenderer::numSamples;
+ 				}
+@@ -795,7 +795,7 @@
+ 				cPixel = cPixelLine;
+ 				for (i=0;i<xres;i++) {			
+ 					for (sx=0;sx<CRenderer::pixelXsamples;sx++,cSample+=pixelSize) {
+-						cPixel[4]		=	max(cPixel[4],cSample[1]);
++						cPixel[4]		=	px_max(cPixel[4],cSample[1]);
+ 					}
+ 					cPixel += CRenderer::numSamples;
+ 				}
+@@ -1004,13 +1004,13 @@
+ 		float		cgSlopeMin	=	(opacity[1] - data.origin[2] - data.tsmThreshold) * denom;
+ 		float		cbSlopeMin	=	(opacity[2] - data.origin[3] - data.tsmThreshold) * denom;
+ 
+-		crSlopeMax				=	min(crSlopeMax,data.rSlopeMax);
+-		cgSlopeMax				=	min(cgSlopeMax,data.gSlopeMax);
+-		cbSlopeMax				=	min(cbSlopeMax,data.bSlopeMax);
+-
+-		crSlopeMin				=	max(crSlopeMin,data.rSlopeMin);
+-		cgSlopeMin				=	max(cgSlopeMin,data.gSlopeMin);
+-		cbSlopeMin				=	max(cbSlopeMin,data.bSlopeMin);
++		crSlopeMax				=	px_min(crSlopeMax,data.rSlopeMax);
++		cgSlopeMax				=	px_min(cgSlopeMax,data.gSlopeMax);
++		cbSlopeMax				=	px_min(cbSlopeMax,data.bSlopeMax);
++
++		crSlopeMin				=	px_max(crSlopeMin,data.rSlopeMin);
++		cgSlopeMin				=	px_max(cgSlopeMin,data.gSlopeMin);
++		cbSlopeMin				=	px_max(cbSlopeMin,data.bSlopeMin);
+ 
+ 		if ((crSlopeMin < crSlopeMax) && (cgSlopeMin < cgSlopeMax) && (cbSlopeMin < cbSlopeMax)) {			
+ 			// We're in range
+diff -Naur a/src/ri/stochasticPoint.h b/src/ri/stochasticPoint.h
+--- a/src/ri/stochasticPoint.h	2017-10-10 01:11:35.374613638 -0400
++++ b/src/ri/stochasticPoint.h	2017-10-10 01:13:12.587003544 -0400
+@@ -288,10 +288,10 @@
+ 	int	xmax	=	bounds[1] - left;
+ 	int	ymax	=	bounds[3] - top;
+ 
+-	xmin		=	max(xmin,0);		// Clamp the bound in the current bucket
+-	ymin		=	max(ymin,0);
+-	xmax		=	min(xmax,xres);
+-	ymax		=	min(ymax,yres);
++	xmin		=	px_max(xmin,0);		// Clamp the bound in the current bucket
++	ymin		=	px_max(ymin,0);
++	xmax		=	px_min(xmax,xres);
++	ymax		=	px_min(ymax,yres);
+ 
+ 	const float	*v0	=	vertices;
+ 	int			x,y;
+diff -Naur a/src/ri/stochasticQuad.h b/src/ri/stochasticQuad.h
+--- a/src/ri/stochasticQuad.h	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/stochasticQuad.h	2017-10-10 01:13:12.643003769 -0400
+@@ -389,10 +389,10 @@
+ int ymin				=	grid->ybound[0] - top;
+ int ymax				=	grid->ybound[1] - top;
+ 
+-xmin					=	max(xmin,0);		// Clamp the bound in the current bucket
+-ymin					=	max(ymin,0);
+-xmax					=	min(xmax,xres);
+-ymax					=	min(ymax,yres);
++xmin					=	px_max(xmin,0);		// Clamp the bound in the current bucket
++ymin					=	px_max(ymin,0);
++xmax					=	px_min(xmax,xres);
++ymax					=	px_min(ymax,yres);
+ 
+ int	x,y;
+ for (y=ymin;y<=ymax;y++) for (x=xmin;x<=xmax;x++) {
+@@ -545,10 +545,10 @@
+ 		int	xmax	=	bounds[1] - left;
+ 		int	ymax	=	bounds[3] - top;
+ 
+-		xmin		=	max(xmin,0);		// Clamp the bound in the current bucket
+-		ymin		=	max(ymin,0);
+-		xmax		=	min(xmax,xres);
+-		ymax		=	min(ymax,yres);
++		xmin		=	px_max(xmin,0);		// Clamp the bound in the current bucket
++		ymin		=	px_max(ymin,0);
++		xmax		=	px_min(xmax,xres);
++		ymax		=	px_min(ymax,yres);
+ 
+ 
+ 		// Figure our if we have to do the slow rasterization	
+diff -Naur a/src/ri/subdivision.cpp b/src/ri/subdivision.cpp
+--- a/src/ri/subdivision.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/subdivision.cpp	2017-10-10 01:13:12.629003713 -0400
+@@ -229,7 +229,7 @@
+ 			if ((cu == 0) && (cv == 0)) {
+ 				n		=	/*10*/24;
+ 			} else {
+-				n		=	(int)  floor(min(-log(cu),-log(cv))/log(2.0))+1;
++				n		=	(int)  floor(px_min(-log(cu),-log(cv))/log(2.0))+1;
+ 				if (n <= 0)	n	=	1;	// Need at least one subdivision
+ 			}
+ 
+diff -Naur a/src/ri/subdivisionCreator.cpp b/src/ri/subdivisionCreator.cpp
+--- a/src/ri/subdivisionCreator.cpp	2017-10-10 01:11:35.371613626 -0400
++++ b/src/ri/subdivisionCreator.cpp	2017-10-10 01:13:12.641003761 -0400
+@@ -181,7 +181,7 @@
+ 						if (childVertex == NULL) {
+ 							childVertex					=	new (data.context) CSVertex(data);
+ 							childVertex->parentv		=	this;
+-							childVertex->sharpness		=	max(sharpness-1,0);
++							childVertex->sharpness		=	px_max(sharpness-1,0);
+ 						}
+ 					}
+ 
+@@ -285,11 +285,11 @@
+ 
+ 							children[0]->vertices[0]	=	vertices[0]->childVertex;
+ 							children[0]->vertices[1]	=	childVertex;
+-							children[0]->sharpness		=	max(sharpness-1,0);
++							children[0]->sharpness		=	px_max(sharpness-1,0);
+ 
+ 							children[1]->vertices[0]	=	vertices[1]->childVertex;
+ 							children[1]->vertices[1]	=	childVertex;
+-							children[1]->sharpness		=	max(sharpness-1,0);
++							children[1]->sharpness		=	px_max(sharpness-1,0);
+ 
+ 							children[0]->vertices[0]->addEdge(children[0]);
+ 							children[0]->vertices[1]->addEdge(children[0]);
+@@ -1850,7 +1850,7 @@
+ 				cEdge			=	v0->edgeExists(v1);
+ 
+ 				if (cEdge != NULL) {
+-					cEdge->sharpness	=	min(cfloatargs[0],10);
++					cEdge->sharpness	=	px_min(cfloatargs[0],10);
+ 				} else {
+ 					error(CODE_RANGE,"The edge between vertices %d-%d not found\n",cintargs[j],cintargs[j+1]);
+ 				}
+diff -Naur a/src/ri/surface.cpp b/src/ri/surface.cpp
+--- a/src/ri/surface.cpp	2017-10-10 01:11:35.368613614 -0400
++++ b/src/ri/surface.cpp	2017-10-10 01:13:12.618003669 -0400
+@@ -56,7 +56,7 @@
+ // Return Value			:
+ // Comments				:	(inline for speed, needed for CSurface::dice() )
+ static inline float	minCocPixels(float z1, float z2) {
+-	return min(cocPixels(z1),cocPixels(z2));
++	return px_min(cocPixels(z1),cocPixels(z2));
+ }
+ 
+ 
+@@ -304,8 +304,8 @@
+ 			if (cullFlags)	return;
+ 
+ 			// Expand the bound
+-			maxBound		=	max(bmax[COMP_X]-bmin[COMP_X],bmax[COMP_Y]-bmin[COMP_Y]);
+-			maxBound		=	max(bmax[COMP_Z]-bmin[COMP_Z],maxBound);
++			maxBound		=	px_max(bmax[COMP_X]-bmin[COMP_X],bmax[COMP_Y]-bmin[COMP_Y]);
++			maxBound		=	px_max(bmax[COMP_Z]-bmin[COMP_Z],maxBound);
+ 			maxBound		*=	attributes->rasterExpand;
+ 			if (maxBound == 0)	return;
+ 
+@@ -332,7 +332,7 @@
+ 				// Correct shading rate with dof factor
+ 				if (CRenderer::flags & OPTIONS_FLAGS_FOCALBLUR) {
+ 					const float coc =	minCocPixels(bmin[COMP_Z],bmax[COMP_Z]);
+-					shadingRate		*=	max(1,0.5f*coc);
++					shadingRate		*=	px_max(1,0.5f*coc);
+ 				}
+ 				
+ 				// Optionally correct shading rate with motionfactor
+@@ -373,8 +373,8 @@
+ 			}
+ 
+ 			// clamp to the surface dice stats
+-			udiv = max(minDivU,udiv);
+-			vdiv = max(minDivV,vdiv);
++			udiv = px_max(minDivU,udiv);
++			vdiv = px_max(minDivV,vdiv);
+ 
+ 			// Check the size ... If we're too big, we should be split
+ 			if ((udiv+1)*(vdiv+1) > CRenderer::maxGridSize)	{
+@@ -1582,8 +1582,8 @@
+ 				// Expand bounds
+ 				bnds = bounds;
+ 				for(int i=0;i<nb*nb;i++){
+-					float maxBound	=	max(bnds[3+COMP_X]-bnds[COMP_X],bnds[3+COMP_Y]-bnds[COMP_Y]);
+-					maxBound		=	max(bnds[3+COMP_Z]-bnds[COMP_Z],maxBound);
++					float maxBound	=	px_max(bnds[3+COMP_X]-bnds[COMP_X],bnds[3+COMP_Y]-bnds[COMP_Y]);
++					maxBound		=	px_max(bnds[3+COMP_Z]-bnds[COMP_Z],maxBound);
+ 					maxBound		*=	boundExpander;
+ 		
+ 					bnds[COMP_X]	-=	maxBound;
+@@ -1702,8 +1702,8 @@
+ 				// Expand bounds
+ 				bnds = bounds;
+ 				for(int i=0;i<nb*nb;i++){
+-					float maxBound	=	max(bnds[3+COMP_X]-bnds[COMP_X],bnds[3+COMP_Y]-bnds[COMP_Y]);
+-					maxBound		=	max(bnds[3+COMP_Z]-bnds[COMP_Z],maxBound);
++					float maxBound	=	px_max(bnds[3+COMP_X]-bnds[COMP_X],bnds[3+COMP_Y]-bnds[COMP_Y]);
++					maxBound		=	px_max(bnds[3+COMP_Z]-bnds[COMP_Z],maxBound);
+ 					maxBound		*=	boundExpander;
+ 		
+ 					bnds[COMP_X]	-=	maxBound;
+@@ -1735,8 +1735,8 @@
+ 	float	vAvg	=	0;
+ 	for (int i=0;i<=div;i++) {
+ 		const float	l	=	measureLength(Pstorage + i*3,(div+1)*3,div);
+-		vMax			=	max(vMax,l);
+-		vMin			=	min(vMin,l);
++		vMax			=	px_max(vMax,l);
++		vMin			=	px_min(vMin,l);
+ 		vAvg			+=	l;
+ 	}
+ 
+@@ -1745,8 +1745,8 @@
+ 	float	uAvg	=	0;
+ 	for (int i=0;i<=div;i++) {
+ 		const float	l	=	measureLength(Pstorage + i*(div+1)*3,3,div);
+-		uMax			=	max(uMax,l);
+-		uMin			=	min(uMin,l);
++		uMax			=	px_max(uMax,l);
++		uMin			=	px_min(uMin,l);
+ 		uAvg			+=	l;
+ 	}
+ 
+@@ -1818,9 +1818,9 @@
+ 	// Simply save the coarse r estimate
+ 	if (rdiv == 1) {
+ 		// we sampled 2x2 because we have to, but we wanted 1x1
+-		rmax							=	max(rmax,(uAvg+vAvg)/4.0f);
++		rmax							=	px_max(rmax,(uAvg+vAvg)/4.0f);
+ 	} else {
+-		rmax							=	max(rmax,div*(uAvg+vAvg)/2.0f);
++		rmax							=	px_max(rmax,div*(uAvg+vAvg)/2.0f);
+ 	}
+ 	
+ 	// Calculate a tighter bound
+@@ -1850,8 +1850,8 @@
+ 	}
+ 	
+ 	// Expand the bound
+-	float maxBound	=	max(bmax[COMP_X]-bmin[COMP_X],bmax[COMP_Y]-bmin[COMP_Y]);
+-	maxBound		=	max(bmax[COMP_Z]-bmin[COMP_Z],maxBound);
++	float maxBound	=	px_max(bmax[COMP_X]-bmin[COMP_X],bmax[COMP_Y]-bmin[COMP_Y]);
++	maxBound		=	px_max(bmax[COMP_Z]-bmin[COMP_Z],maxBound);
+ 	maxBound		*=	boundExpander;
+ 
+ 	bmin[COMP_X]	-=	maxBound;
+diff -Naur a/src/ri/texmake.cpp b/src/ri/texmake.cpp
+--- a/src/ri/texmake.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/texmake.cpp	2017-10-10 01:13:12.638003749 -0400
+@@ -382,7 +382,7 @@
+ 
+ 		for (k=0;k<numSamples;k++) {
+ 			float t = (pixel[k] / norm[0]);		// avoid precision / quanitze issues
+-			t = min(max(minVal,t),maxVal);
++			t = px_min(px_max(minVal,t),maxVal);
+ 			dest[k]	=	(T) (t);
+ 			
+ 			//dest[k]	=	(T) (pixel[k] / norm[0]);
+@@ -492,7 +492,7 @@
+ 		if (nrm > 0) {
+ 			for (k=0;k<numSamples;k++) {
+ 				float t = (pixel[k] / nrm);		// avoid precision / quanitze issues
+-				t = min(max(minVal,t),maxVal);
++				t = px_min(px_max(minVal,t),maxVal);
+ 				dest[k]	=	(T) (t);
+ 			}
+ 		} else {
+diff -Naur a/src/ri/texture.cpp b/src/ri/texture.cpp
+--- a/src/ri/texture.cpp	2017-10-10 01:11:35.373613634 -0400
++++ b/src/ri/texture.cpp	2017-10-10 01:13:12.634003733 -0400
+@@ -219,7 +219,7 @@
+ // Comments				:
+ static inline unsigned char	*textureAllocateBlock(CTextureBlock *entry,CShadingContext *context) {
+ 	stats.textureSize								+=	entry->size;
+-	stats.peakTextureSize							=	max(stats.textureSize,stats.peakTextureSize);
++	stats.peakTextureSize							=	px_max(stats.textureSize,stats.peakTextureSize);
+ 	stats.textureMemory								+=	entry->size;
+ 	stats.transferredTextureData					+=	entry->size;
+ 
+@@ -910,23 +910,23 @@
+ 							ds			=	(u[1] - cs)*width;
+ 							dt			=	(v[1] - ct)*height;
+ 							d			=	ds*ds + dt*dt;
+-							diag		=	min(d,diag);
++							diag		=	px_min(d,diag);
+ 
+ 							ds			=	(u[2] - cs)*width;
+ 							dt			=	(v[2] - ct)*height;
+ 							d			=	ds*ds + dt*dt;
+-							diag		=	min(d,diag);
++							diag		=	px_min(d,diag);
+ 
+ 							ds			=	(u[3] - cs)*width;
+ 							dt			=	(v[3] - ct)*height;
+ 							d			=	ds*ds + dt*dt;
+-							diag		=	min(d,diag);
++							diag		=	px_min(d,diag);
+ 
+ 							diag		+=	scratch->textureParams.blur*scratch->textureParams.blur*width*height;
+ 
+ 																	// Find the layer that we want to probe
+ 							l			=	(logf(diag)*0.5f*(1/logf(2.0f)));
+-							l			=	max(l,0);
++							l			=	px_max(l,0);
+ 
+ 							i			=	(int) floor(l);
+ 							if (i >= (numLayers-1)) i =	numLayers-2;
+@@ -934,7 +934,7 @@
+ 							layer0		=	layers[i];
+ 							layer1		=	layers[i+1];	
+ 							offset		=	l - i;
+-							offset		=	min(offset,1);
++							offset		=	px_min(offset,1);
+ 
+ 							const float jitter = 1.0f-1.0f/(float)scratch->textureParams.samples;
+ 
+diff -Naur a/src/ri/zbuffer.cpp b/src/ri/zbuffer.cpp
+--- a/src/ri/zbuffer.cpp	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/zbuffer.cpp	2017-10-10 01:12:37.945864719 -0400
+@@ -62,7 +62,7 @@
+ 	}
+ 
+ 	// Initialize the occlusion culler
+-	initCuller(max(totalWidth,totalHeight), &maxDepth);
++	initCuller(px_max(totalWidth,totalHeight), &maxDepth);
+ }
+ 
+ 
+diff -Naur a/src/ri/zbufferPoint.h b/src/ri/zbufferPoint.h
+--- a/src/ri/zbufferPoint.h	2017-10-10 01:11:35.372613630 -0400
++++ b/src/ri/zbufferPoint.h	2017-10-10 01:13:12.629003713 -0400
+@@ -45,10 +45,10 @@
+ 	int	xmax	=	bounds[1] - left;
+ 	int	ymax	=	bounds[3] - top;
+ 
+-	xmin		=	max(xmin,0);		// Clamp the bound in the current bucket
+-	ymin		=	max(ymin,0);
+-	xmax		=	min(xmax,xres);
+-	ymax		=	min(ymax,yres);
++	xmin		=	px_max(xmin,0);		// Clamp the bound in the current bucket
++	ymin		=	px_max(ymin,0);
++	xmax		=	px_min(xmax,xres);
++	ymax		=	px_min(ymax,yres);
+ 
+ 
+ 	float	xcent,ycent;
+diff -Naur a/src/ri/zbufferQuad.h b/src/ri/zbufferQuad.h
+--- a/src/ri/zbufferQuad.h	2017-10-10 01:11:35.371613626 -0400
++++ b/src/ri/zbufferQuad.h	2017-10-10 01:13:12.583003528 -0400
+@@ -55,10 +55,10 @@
+ 		int	xmax	=	bounds[1] - left;
+ 		int	ymax	=	bounds[3] - top;
+ 
+-		xmin		=	max(xmin,0);		// Clamp the bound in the current bucket
+-		ymin		=	max(ymin,0);
+-		xmax		=	min(xmax,xres);
+-		ymax		=	min(ymax,yres);
++		xmin		=	px_max(xmin,0);		// Clamp the bound in the current bucket
++		ymin		=	px_max(ymin,0);
++		xmax		=	px_min(xmax,xres);
++		ymax		=	px_min(ymax,yres);
+ 
+ 
+ 		// This macro is used to check whether the sample is inside the quad or not

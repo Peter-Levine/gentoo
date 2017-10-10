@@ -1,4 +1,4 @@
-# Copyright 1999-2016 Gentoo Foundation
+# Copyright 1999-2017 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI="2"
@@ -47,6 +47,7 @@ src_prepare() {
 	# FIX: missing @includedir@
 	# https://sf.net/tracker/?func=detail&aid=2923415&group_id=59462&atid=491094
 	epatch "${FILESDIR}"/${P}-autotools.patch
+	epatch "${FILESDIR}"/${P}-gcc6.patch
 	eautoreconf
 
 	# FIX: removing pre-compiled shaders
