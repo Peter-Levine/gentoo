@@ -39,7 +39,7 @@ src_prepare() {
 }
 
 src_configure() {
-	./configure --fhs || die
+	PERL5LIB="${S}" ./configure --fhs || die
 }
 
 src_install() {
