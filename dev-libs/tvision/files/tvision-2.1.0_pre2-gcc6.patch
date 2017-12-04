@@ -1,34 +1,91 @@
-Fix gcc-6 compilation errors; bug 594176
+Bug: https://bugs.gentoo.org/594176
 
+--- a/classes/dos/sescreen.cc
++++ b/classes/dos/sescreen.cc
+@@ -248,6 +248,8 @@
+ static int TextModeXres;
+ static int TextModeYres;
+ 
++#define tdisplay_abs(x) ((x)>0?(x):-(x))
++
+ /*****************************************************************************
+ 
+ ***************************  VESA BIOS ROUTINES ******************************
+@@ -1227,11 +1229,11 @@
+       do {
+ 	 x1 = (rand() & 255) + 32;
+ 	 x2 = (rand() & 255) + 32;
+-      } while (abs(x1-x2) < 30);
++      } while (tdisplay_abs(x1-x2) < 30);
+       do {
+ 	 y1 = (rand() & 127) + 40;
+ 	 y2 = (rand() & 127) + 40;
+-      } while (abs(y1-y2) < 20);
++      } while (tdisplay_abs(y1-y2) < 20);
+       set_clip(screen, xoff+x1, yoff+y1, xoff+x2, yoff+y2);
+    }
+ 
 --- a/classes/tdesktop.cc
 +++ b/classes/tdesktop.cc
-@@ -26,6 +26,10 @@ Modified cursor behavior while desktop locked by Salvador E. Tropea (SET)
- #define Uses_TVCodePage
- #include <tv.h>
+@@ -15,6 +15,8 @@
+ // they can inconditionally declare symbols like NULL
+ #include <stdlib.h>
  
-+#include <cmath>
++#define tdisplay_abs(x) ((x)>0?(x):-(x))
 +
-+using std::abs;
-+
- TDeskInit::TDeskInit( TBackground *(*cBackground)( TRect ) ) :
-     createBackground( cBackground )
+ #define Uses_TDeskTop
+ #define Uses_TRect
+ #define Uses_TPoint
+@@ -144,7 +146,7 @@
  {
+     unsigned res1 = 2;
+     unsigned res2 = i/res1;
+-    while( abs( res1 - res2 ) > 1 )
++    while( tdisplay_abs( res1 - res2 ) > 1 )
+         {
+         res1 = (res1 + res2)/2;
+         res2 = i/res1;
 --- a/classes/tdisplay.cc
 +++ b/classes/tdisplay.cc
-@@ -22,6 +22,10 @@ same used in original Turbo Vision for compatibility purposes.
- #define Uses_TVCodePage
- #include <tv.h>
+@@ -15,6 +15,8 @@
+   
+ ***************************************************************************/
  
-+#include <cmath>
++#define tdisplay_abs(x) ((x)>0?(x):-(x))
 +
-+using std::abs;
-+
- // Remove me please!
- int TDisplay::dual_display=0;
- 
+ //#define DEBUG_CURSOR
+ #define Uses_stdio
+ #define Uses_stdlib
+@@ -381,10 +383,10 @@
+  if (firstXMatch!=-1)
+    {// Return the closest y that match x
+     i=indexMin=firstXMatch;
+-    minDif=abs(res[i].y-y);
++    minDif=tdisplay_abs(res[i].y-y);
+     while (++i<cant && res[i].x==x)
+       {
+-       dif=abs(res[i].y-y);
++       dif=tdisplay_abs(res[i].y-y);
+        if (dif<minDif)
+          {
+           minDif=dif;
+@@ -396,11 +398,11 @@
+    }
+  // No x match, looks the one with minimum differences
+  indexMin=0;
+- minDif=abs(res[0].y-y)+abs(res[0].x-x);
++ minDif=tdisplay_abs(res[0].y-y)+tdisplay_abs(res[0].x-x);
+  i=1;
+  while (i<cant)
+    {
+-    dif=abs(res[i].y-y)+abs(res[i].x-x);
++    dif=tdisplay_abs(res[i].y-y)+tdisplay_abs(res[i].x-x);
+     if (dif<minDif)
+       {
+        minDif=dif;
 --- a/classes/tvtext1.cc
 +++ b/classes/tvtext1.cc
-@@ -110,8 +110,8 @@
+@@ -110,10 +110,10 @@
  char TCheckBoxes::button[] = " [ ] ";
  char TCheckBoxes::obutton[] = " [ ] ";
  
@@ -41,20 +98,31 @@ Fix gcc-6 compilation errors; bug 594176
 +TScrollChars TScrollBar::hChars = {17, 16, (char) 177, (char) 254, (char) 178};
 +TScrollChars TScrollBar::ohChars = {17, 16, (char) 177, (char) 254, (char) 178};
  
+ char TButton::shadows[] = "\xDC\xDB\xDF"; // ÜÛß
+ char TButton::oshadows[] = "\xDC\xDB\xDF"; // ÜÛß
 --- a/classes/x11/x11src.cc
 +++ b/classes/x11/x11src.cc
-@@ -94,6 +94,10 @@
-  #define TIMER_ALARM SIGALRM
+@@ -84,6 +84,8 @@
+  #include <pthread.h>
  #endif
  
-+#include <cmath>
++#define tdisplay_abs(x) ((x)>0?(x):-(x))
 +
-+using std::abs;
-+
- const unsigned foWmin=5, foHmin=7, foWmax=20, foHmax=32;
- const int cursorDelay=300000;
- 
-@@ -2555,49 +2559,49 @@ Cursor TScreenX11::busyCursor,
+ #ifdef TVOSf_Solaris
+  // At least in the Solaris 7 box I tested looks like ITIMER_REAL is broken
+  // and behaves like ITIMER_VIRTUAL
+@@ -2457,8 +2459,8 @@
+  else
+    {
+     unsigned target=fW*fH;
+-    int dif1=abs(8*16-target);
+-    int dif2=abs(10*20-target);
++    int dif1=tdisplay_abs(8*16-target);
++    int dif2=tdisplay_abs(10*20-target);
+     if (dif1<dif2)
+        nFont=&font8x16;
+     else
+@@ -2555,49 +2557,49 @@
         TScreenX11::leftPtr;
  char   TScreenX11::busyCursorMap[]=
  {
@@ -144,4 +212,3 @@ Fix gcc-6 compilation errors; bug 594176
  };
  
  /* This is the function which creates cursors. On success it return
-
