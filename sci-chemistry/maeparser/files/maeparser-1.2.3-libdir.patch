@@ -1,0 +1,36 @@
+PR: https://github.com/schrodinger/maeparser/pull/64
+
+From 84b7814cb1a2fb7e657af75e11dd1a5f7301287b Mon Sep 17 00:00:00 2001
+From: Peter Levine <plevine457@gmail.com>
+Date: Mon, 1 Jun 2020 21:03:18 -0400
+Subject: [PATCH] Don't use hard-coded installation directories
+
+Allow for installation to GNU and FHS conformant directories.
+---
+ CMakeLists.txt | 11 ++++++++---
+ 1 file changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e37dd4c..82cec75 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -63,11 +63,16 @@ target_include_directories(maeparser PUBLIC
+     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+     $<INSTALL_INTERFACE:include>)
+
++if(MSVC)
++    set(CMAKE_INSTALL_LIBDIR lib)
++    set(CMAKE_INSTALL_BINDIR bin)
++endif(MSVC)
++
+ install(TARGETS maeparser
+     EXPORT maeparser-targets
+-    LIBRARY DESTINATION lib
+-    ARCHIVE DESTINATION lib
+-    RUNTIME DESTINATION bin)
++    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+ INSTALL(EXPORT maeparser-targets
+     FILE ${PROJECT_NAME}-config.cmake
