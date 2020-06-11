@@ -1,0 +1,20 @@
+Bug: https://bugs.gentoo.org/718482
+Altered from https://github.com/openbabel/openbabel/commit/732444b1765d52138bdf86d69e940ecbc1871c11
+
+--- a/setup.py
++++ b/setup.py
+@@ -1,4 +1,5 @@
+ #!/usr/bin/env python
++from __future__ import print_function
+ import os
+ import re
+ import subprocess
+@@ -105,7 +106,7 @@ def swig_sources(self, sources, extension):
+                   'For example:',
+                   '  python setup.py build_ext -I{} -L{}'.format(self.ob_include_dir, self.ob_library_dir),
+                   '  python setup.py install',
+-                  sep='\n')
++                  sep=r'\n')
+             sys.exit(1)
+ 
+ 
