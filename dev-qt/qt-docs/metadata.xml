@@ -29,6 +29,7 @@
 		<flag name="printsupport">Install documentation for <pkg>dev-qt/qtprintsupport</pkg></flag>
 		<flag name="qch">Install documentation in QCH format</flag>
 		<flag name="qdoc">Install documentation for <pkg>dev-qt/qdoc</pkg></flag>
+		<flag name="quick3d">Install documentation for <pkg>dev-qt/qtquick3d</pkg></flag>
 		<flag name="quickcontrols">Install documentation for <pkg>dev-qt/qtquickcontrols</pkg></flag>
 		<flag name="quickcontrols2">Install documentation for <pkg>dev-qt/qtquickcontrols2</pkg></flag>
 		<flag name="script">Install documentation for <pkg>dev-qt/qtscript</pkg></flag>
